@@ -1,9 +1,14 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
+import pandas as pd
+import numpy as np
+from typing import Union
 
 
 class StreamingRFC(RandomForestClassifier):
-
+    """
+    Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params.
+    """
     def __init__(self,
                  bootstrap=True,
                  class_weight=None,
@@ -22,7 +27,7 @@ class StreamingRFC(RandomForestClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start=False,
-                 max_n_estimators=10):
+                 max_n_estimators=10) -> None:
         """
 
         :param bootstrap:
@@ -45,7 +50,7 @@ class StreamingRFC(RandomForestClassifier):
         :param max_n_estimators: Total max number of estimators to fit.
         """
 
-
+        # Run the super init, which also calls other parent inits to handle other params (like base estimator)
         super().__init__()
 
         self.max_n_estimators = None
@@ -73,15 +78,19 @@ class StreamingRFC(RandomForestClassifier):
                         max_n_estimators=max_n_estimators)
 
     def set_params(self,
-                   **kwargs):
+                   **kwargs) -> None:
+        """
+        Ensure warm_Start is set to true, otherwise set other params as usual.
 
+        :param kwargs:
+        """
         # Warm start should be true to get .fit() to keep existing estimators.
         kwargs['warm_start'] = True
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def partial_fit(self, x, y):
+    def partial_fit(self, x: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series]):
         """
         Fit a single DTC using the given subset of x and y.
 
@@ -109,7 +118,6 @@ class StreamingRFC(RandomForestClassifier):
             print('Done')
             return self
 
-
         # If still not done, prep to fit next
         if self._fit_estimators < self.max_n_estimators:
             self.n_estimators += self._estimators_per_chunk
@@ -119,8 +127,6 @@ class StreamingRFC(RandomForestClassifier):
 
 
 if __name__ == '__main__':
-
-    import pandas as pd
 
     data = pd.read_csv('sample_data.csv')
     x = data[[c for c in data if c != 'target']]
