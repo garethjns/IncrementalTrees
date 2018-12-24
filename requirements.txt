@@ -4,3 +4,7 @@ dask
 dask-ml
 distributed
 bokeh
+pytest
+jupyter
+jupyterlab
+ipykernel

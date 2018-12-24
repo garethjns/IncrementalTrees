@@ -1,6 +1,7 @@
 # Folders
-.idea/*
-env/*
+.idea/
+env/
+laptop_env/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
