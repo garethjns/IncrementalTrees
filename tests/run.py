@@ -1,16 +1,14 @@
 from incremental_trees.trees import StreamingRFC
-from sklearn.ensemble import RandomForestClassifier
-import dask_ml
 import dask_ml.datasets
 import dask_ml.cluster
 from dask_ml.wrappers import Incremental
 import dask as dd
-from dask.distributed import Client
+from dask.distributed import Client, LocalCluster
 
 
 def run_on_blobs():
 
-    x, y = dask_ml.datasets.make_blobs(n_samples=1e8,
+    x, y = dask_ml.datasets.make_blobs(n_samples=1e6,
                                        chunks=1e4,
                                        random_state=0,
                                        centers=3)
@@ -18,7 +16,7 @@ def run_on_blobs():
     x = dd.dataframe.from_array(x)
     y = dd.dataframe.from_array(y)
 
-    x.shape[0].compute()
+    print(f"Rows: {x.shape[0].compute()}")
 
     ests_per_chunk = 2
     chunks = len(x.divisions)
@@ -28,13 +26,12 @@ def run_on_blobs():
     srfc.fit(x, y)
 
 
-# Run "locally"
-# run_on_blobs()
+# Create, connect, and run on local cluster.
+with LocalCluster(processes=False,
+                  n_workers=2,
+                  threads_per_worker=2,
+                  scheduler_port=8080,
+                  diagnostics_port=8081) as cluster, Client(cluster) as client:
 
-
-# Run on running scheduler - getting ModuleNotFoundError: No module named 'incremental_trees' with this at the moment.
-client = Client('localhost:8786')
-client
-
-client.upload_file('../dist/IncrementalTrees-0.0.1.tar.gz')
-client.run(run_on_blobs)
+        print(client)
+        run_on_blobs()
