@@ -3,7 +3,7 @@ import setuptools
 # with open("README.md", "r") as fh:
 #     long_description = fh.read()
 
-setuptools.setup(name='IncrementalTrees',
+setuptools.setup(name='incremental_trees',
                  version="0.0.1",
                  author="Gareth Jones",
                  author_email="author@example.com",
