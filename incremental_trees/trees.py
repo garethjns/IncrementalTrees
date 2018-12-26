@@ -1,8 +1,8 @@
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
 import pandas as pd
 import numpy as np
 from typing import Union
+import time
 
 
 class StreamingRFC(RandomForestClassifier):
@@ -27,7 +27,8 @@ class StreamingRFC(RandomForestClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start=False,
-                 max_n_estimators=10) -> None:
+                 max_n_estimators=10,
+                 verb: int=0) -> None:
         """
 
         :param bootstrap:
@@ -48,6 +49,7 @@ class StreamingRFC(RandomForestClassifier):
         :param verbose:
         :param warm_start:
         :param max_n_estimators: Total max number of estimators to fit.
+        :param verb: If > 0 display debugging info during fit
         """
 
         # Run the super init, which also calls other parent inits to handle other params (like base estimator)
@@ -75,7 +77,8 @@ class StreamingRFC(RandomForestClassifier):
                         verbose=verbose,
                         warm_start=warm_start,
                         _fit_estimators=0,
-                        max_n_estimators=max_n_estimators)
+                        max_n_estimators=max_n_estimators,
+                        verb=0)
 
     def set_params(self,
                    **kwargs) -> None:
@@ -104,18 +107,20 @@ class StreamingRFC(RandomForestClassifier):
 
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
-            print(f"Fitting estimators {self._fit_estimators} - {self._fit_estimators + self._estimators_per_chunk} "
-                  f"/ {self.max_n_estimators}")
-            import time
             t0 = time.time()
             self.fit(x, y)
             t1 = time.time()
-            print(f"Fit time: {round(t1 - t0, 2)}")
-            print(len(self.estimators_))
+
+            if self.verb > 0:
+                print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self._estimators_per_chunk} "
+                      f"/ {self.max_n_estimators}")
+                print(f"Fit time: {round(t1 - t0, 2)}")
+                print(len(self.estimators_))
             self._fit_estimators += self._estimators_per_chunk
 
         else:
-            print('Done')
+            if self.verb > 0:
+                print('Done')
             return self
 
         # If still not done, prep to fit next
