@@ -2,6 +2,10 @@ import unittest
 import numpy as np
 from incremental_trees.trees import StreamingRFC
 from sklearn.datasets import make_blobs
+from dask.distributed import Client, LocalCluster
+import dask_ml
+import dask_ml.datasets
+from dask_ml.wrappers import Incremental
 
 
 class TestBasic(unittest.TestCase):
@@ -11,7 +15,7 @@ class TestBasic(unittest.TestCase):
 
     These are run without using Dask, so the subset passing to partial_fit is handled manually.
     """
-    def setUp(self):
+    def setUp(self) -> None:
         self.n_samples_1 = 1000
         self.n_samples_2 = 3000
 
@@ -83,11 +87,72 @@ class TestBasic(unittest.TestCase):
 class TestBasicDask(unittest.TestCase):
     """
     Run fits for different model settings, lengths of data, and chunk sizes.
-    Checks number of esitmators fit is as expected.
+    Checks number of estimators fit is as expected.
     """
-    def setUpClass(cls):
+    @classmethod
+    def setUpClass(cls) -> None:
         """
-        Prepare dask connection
-        :return:
+        Prepare dask connection once.
         """
-        pass
+        # super().setUpClass()
+
+        try:
+            cls.cluster = LocalCluster(processes=True,
+                                       n_workers=4,
+                                       threads_per_worker=2,
+                                       scheduler_port=8585,
+                                       diagnostics_port=8586)
+        except RuntimeError:
+            cls.cluster = 'localhost:8585'
+
+        cls.client = Client(cls.cluster)
+
+        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e7,
+                                                   chunks=1e4,
+                                                   random_state=0,
+                                                   n_features=40,
+                                                   centers=2,
+                                                   cluster_std=100)
+
+        cls.n_chunks = len(cls.x.chunks[0])
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.client.close()
+        if type(cls.cluster) != 'str':
+            cls.cluster.close()
+
+    def test_fit_incremental_forest(self) -> None:
+        n_estimators_per_chunk = 1
+        srfc = Incremental(StreamingRFC(n_estimators=n_estimators_per_chunk,
+                                        n_jobs=-1,
+                                        max_n_estimators=np.inf))
+
+        srfc.fit(self.x, self.y)
+
+        expected_ests = self.n_chunks * n_estimators_per_chunk
+        self.assertAlmostEquals(len(srfc.estimator_), expected_ests)
+
+    def test_fit_incremental_forest_multiple_ests_per_chunk(self) -> None:
+        n_estimators_per_chunk = 20
+        srfc = Incremental(StreamingRFC(n_estimators=20,
+                                        n_jobs=-1,
+                                        max_n_estimators=np.inf))
+
+        srfc.fit(self.x, self.y)
+
+        expected_ests = self.n_chunks * n_estimators_per_chunk
+        self.assertAlmostEquals(len(srfc.estimator_), expected_ests)
+
+    def test_fit_partial_dtc(self) -> None:
+        n_estimators_per_chunk = 10
+        srfc = Incremental(StreamingRFC(n_estimators=n_estimators_per_chunk,
+                                        n_jobs=-1,
+                                        max_n_estimators=np.inf,
+                                        max_features=self.x.shape[1]))
+
+        srfc.fit(self.x, self.y)
+
+        expected_ests = self.n_chunks * n_estimators_per_chunk
+        self.assertAlmostEquals(len(srfc.estimator_), expected_ests)
+
