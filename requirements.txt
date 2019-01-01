@@ -8,3 +8,4 @@ pytest
 jupyter
 jupyterlab
 ipykernel
+matplotlib
