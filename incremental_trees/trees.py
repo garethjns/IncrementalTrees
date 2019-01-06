@@ -93,17 +93,41 @@ class StreamingRFC(RandomForestClassifier):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def partial_fit(self, x: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series]):
+    def partial_fit(self, x: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
+                    classes):
         """
         Fit a single DTC using the given subset of x and y.
-
+​
         Passes subset to fit, rather than using the same data each time. Wrap with Dask Incremental to handle subset
         feeding.
+​
+        First call needs to be supplied with the expected classes (similar to existing models with .partial_fit())
+        in case not all classes are present in the first subset.
+        TODO: This currently expected every call, but alternative could be checked with the existing sklearn mechanism.
+​
+        Additionally, the case where not all classes are presented in the first or subsequent subsets needs to be
+        handled. For the RandomForestClassifier, tree predictions are averaged in
+        sklearn.ensemble.forest.accumulate_prediction unction. This sums the output matrix with dimensions
+        n rows x n classes and fails if the class dimension differs.
+        The class dimension is defined at the individual estimator level during the .fit() call, which sets the
+        following attributes:
+            - self.n_outputs_ = y.shape[1], which is then used by _validate_y_class_weight()), always called in .fit()
+              to set:
+                - self.classes_
+                - self.n_classes_
 
+        This object sets classes_ and n_classes_ depending on the supplied classes. The Individual trees set theirs
+        depending on the data available in the subset. The predict_proba method is modified to standardise shape to the
+        dimensions defined in this object.
+​
         :param x:
         :param y:
         :return:
         """
+
+        # Set classes for forest (this only needs to be done once).
+        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
+        self.classes_ = np.array(classes)
 
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
@@ -129,6 +153,34 @@ class StreamingRFC(RandomForestClassifier):
 
         else:
             return self
+
+    def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+        """
+        Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't parallel?
+​
+        The .predict() method (sklearn.tree.tree.BaseDecisionTree.predict()) sets the output shape using:
+            # Classification
+            if is_classifier(self):
+                if self.n_outputs_ == 1:
+                    return self.classes_.take(np.argmax(proba, axis=1), axis=0)
+                else:
+                   [Not considering this yet]
+
+        :param x:
+        :return:
+        """
+        preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+                         dtype=np.float32)
+
+        for e in self.estimators_:
+            # Get the prediction from the tree
+            est_preds = e.predict_proba(x)
+            # Get the indexes of the classes present
+            present_classes = e.classes_.astype(int)
+            # Sum these in to the correct array columns
+            preds[:, present_classes] += est_preds
+
+        return preds / len(self.estimators_)
 
 
 if __name__ == '__main__':
