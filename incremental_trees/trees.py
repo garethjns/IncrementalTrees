@@ -1,4 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.utils.multiclass import _check_partial_fit_first_call
 import pandas as pd
 import numpy as np
 from typing import Union
@@ -55,9 +56,11 @@ class StreamingRFC(RandomForestClassifier):
         # Run the super init, which also calls other parent inits to handle other params (like base estimator)
         super().__init__()
 
-        self.max_n_estimators = None
-        self._fit_estimators = 0
-        self._estimators_per_chunk = n_estimators
+        self.max_n_estimators: int = None
+        self._fit_estimators: int = 0
+        self._estimators_per_chunk: int = n_estimators
+        self.classes_: np.array = None  # NB: Needs to be array, not list.
+        self.n_classes_: int = None
 
         self.set_params(bootstrap=bootstrap,
                         class_weight=class_weight,
@@ -94,7 +97,7 @@ class StreamingRFC(RandomForestClassifier):
             setattr(self, key, value)
 
     def partial_fit(self, x: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
-                    classes):
+                    classes: Union[list, np.ndarray]=None):
         """
         Fit a single DTC using the given subset of x and y.
 ​
@@ -127,7 +130,15 @@ class StreamingRFC(RandomForestClassifier):
 
         # Set classes for forest (this only needs to be done once).
         # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
-        self.classes_ = np.array(classes)
+        # Check classes_ is set, or provided
+        # Returns false if nothing to do
+        classes_need_setting = _check_partial_fit_first_call(self, classes)
+
+        # If classes not set, set
+        # Above will error if not set and classes = None
+        if classes_need_setting:
+            self.classes_ = np.array(classes)
+            self.n_classes_ = len(classes)
 
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
