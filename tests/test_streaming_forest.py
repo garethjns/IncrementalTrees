@@ -46,7 +46,28 @@ class TestBasic(unittest.TestCase):
 
         s_idx = 0
         e_idx = samples_per_chunk
-        for i in range(0, n_chunks):
+
+        # Call the first partial fit specifying classes
+        self.mod_1.partial_fit(self.x_1[s_idx:e_idx, :],
+                               self.y_1[s_idx:e_idx],
+                               classes=np.unique(self.y_1))
+
+        self.mod_2.partial_fit(self.x_1[s_idx:e_idx, :],
+                               self.y_1[s_idx:e_idx],
+                               classes=np.unique(self.y_1))
+
+        self.mod_3.partial_fit(self.x_1[s_idx:e_idx, :],
+                               self.y_1[s_idx:e_idx],
+                               classes=np.unique(self.y_1))
+
+        self.mod_4.partial_fit(self.x_1[s_idx:e_idx, :],
+                               self.y_1[s_idx:e_idx],
+                               classes=np.unique(self.y_1))
+
+        # TODO: Some asserts here or split test?
+
+        # Call the rest
+        for i in range(1, n_chunks):
             print(s_idx)
             print(e_idx)
             self.mod_1.partial_fit(self.x_1[s_idx:e_idx, :],
@@ -55,11 +76,14 @@ class TestBasic(unittest.TestCase):
             self.mod_2.partial_fit(self.x_1[s_idx:e_idx, :],
                                    self.y_1[s_idx:e_idx])
 
+            # Leave the classes kwarg in a couple, should be ignored.
             self.mod_3.partial_fit(self.x_1[s_idx:e_idx, :],
-                                   self.y_1[s_idx:e_idx])
+                                   self.y_1[s_idx:e_idx],
+                                   classes=np.unique(self.y_1))
 
             self.mod_4.partial_fit(self.x_1[s_idx:e_idx, :],
-                                   self.y_1[s_idx:e_idx])
+                                   self.y_1[s_idx:e_idx],
+                                   classes=np.unique(self.y_1))
 
             s_idx = e_idx
             e_idx = s_idx + samples_per_chunk
@@ -107,7 +131,7 @@ class TestBasicDask(unittest.TestCase):
 
         cls.client = Client(cls.cluster)
 
-        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e7,
+        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e5,
                                                    chunks=1e4,
                                                    random_state=0,
                                                    n_features=40,
@@ -128,7 +152,8 @@ class TestBasicDask(unittest.TestCase):
                                         n_jobs=-1,
                                         max_n_estimators=np.inf))
 
-        srfc.fit(self.x, self.y)
+        srfc.fit(self.x, self.y,
+                 classes=np.unique(self.y))
 
         expected_ests = self.n_chunks * n_estimators_per_chunk
         self.assertAlmostEquals(len(srfc.estimator_), expected_ests)
@@ -139,7 +164,8 @@ class TestBasicDask(unittest.TestCase):
                                         n_jobs=-1,
                                         max_n_estimators=np.inf))
 
-        srfc.fit(self.x, self.y)
+        srfc.fit(self.x, self.y,
+                 classes=np.unique(self.y))
 
         expected_ests = self.n_chunks * n_estimators_per_chunk
         self.assertAlmostEquals(len(srfc.estimator_), expected_ests)
@@ -151,7 +177,8 @@ class TestBasicDask(unittest.TestCase):
                                         max_n_estimators=np.inf,
                                         max_features=self.x.shape[1]))
 
-        srfc.fit(self.x, self.y)
+        srfc.fit(self.x, self.y,
+                 classes=np.unique(self.y))
 
         expected_ests = self.n_chunks * n_estimators_per_chunk
         self.assertAlmostEquals(len(srfc.estimator_), expected_ests)
