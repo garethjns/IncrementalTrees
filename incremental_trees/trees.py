@@ -31,7 +31,6 @@ class StreamingRFC(RandomForestClassifier):
                  max_n_estimators=10,
                  verb: int=0) -> None:
         """
-
         :param bootstrap:
         :param class_weight:
         :param criterion:
@@ -180,8 +179,11 @@ class StreamingRFC(RandomForestClassifier):
         :param x:
         :return:
         """
+        # Prepare expected output shape
         preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
                          dtype=np.float32)
+        counts = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+                          dtype=np.int16)
 
         for e in self.estimators_:
             # Get the prediction from the tree
@@ -190,8 +192,14 @@ class StreamingRFC(RandomForestClassifier):
             present_classes = e.classes_.astype(int)
             # Sum these in to the correct array columns
             preds[:, present_classes] += est_preds
+            counts[:, present_classes] += 1
 
-        return preds / len(self.estimators_)
+        # Normalise predictions against counts
+        norm_prob = preds / counts
+        # And remove nans (0/0) and infs (n/0)
+        norm_prob[np.isnan(norm_prob) | np.isinf(norm_prob)] = 0
+
+        return norm_prob
 
 
 if __name__ == '__main__':
