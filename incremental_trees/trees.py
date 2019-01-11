@@ -22,14 +22,14 @@ class StreamingRFC(RandomForestClassifier):
                  min_samples_leaf=1,
                  min_samples_split=2,
                  min_weight_fraction_leaf=0.0,
-                 n_estimators=1,
+                 n_estimators_per_chunk: int=1,
+                 n_estimators: bool=None,
                  n_jobs=None,
                  oob_score=False,
                  random_state=None,
                  verbose=0,
                  warm_start=False,
-                 max_n_estimators=10,
-                 verb: int=0) -> None:
+                 max_n_estimators=10) -> None:
         """
         :param bootstrap:
         :param class_weight:
@@ -42,7 +42,7 @@ class StreamingRFC(RandomForestClassifier):
         :param min_samples_leaf:
         :param min_samples_split:
         :param min_weight_fraction_leaf:
-        :param n_estimators: Estimators per chunk to fit.
+        :param n_estimators_per_chunk: Estimators per chunk to fit.
         :param n_jobs:
         :param oob_score:
         :param random_state:
@@ -57,9 +57,11 @@ class StreamingRFC(RandomForestClassifier):
 
         self.max_n_estimators: int = None
         self._fit_estimators: int = 0
-        self._estimators_per_chunk: int = n_estimators
         self.classes_: np.array = None  # NB: Needs to be array, not list.
         self.n_classes_: int = None
+
+        # n_estimators will be used by RFC to set how many ests are fit on each .fit() call
+        n_estimators = n_estimators_per_chunk
 
         self.set_params(bootstrap=bootstrap,
                         class_weight=class_weight,
@@ -72,6 +74,7 @@ class StreamingRFC(RandomForestClassifier):
                         min_samples_leaf=min_samples_leaf,
                         min_samples_split=min_samples_split,
                         min_weight_fraction_leaf=min_weight_fraction_leaf,
+                        n_estimators_per_chunk=n_estimators_per_chunk,
                         n_estimators=n_estimators,
                         n_jobs=n_jobs,
                         oob_score=oob_score,
@@ -145,24 +148,22 @@ class StreamingRFC(RandomForestClassifier):
             self.fit(x, y)
             t1 = time.time()
 
-            if self.verb > 0:
-                print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self._estimators_per_chunk} "
+            if self.verbose > 0:
+                print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self.n_estimators_per_chunk} "
                       f"/ {self.max_n_estimators}")
                 print(f"Fit time: {round(t1 - t0, 2)}")
                 print(len(self.estimators_))
-            self._fit_estimators += self._estimators_per_chunk
+            self._fit_estimators += self.n_estimators_per_chunk
+
+            # If still not done, prep to fit next
+            if self._fit_estimators < self.max_n_estimators:
+                self.n_estimators += self.n_estimators_per_chunk
 
         else:
             if self.verb > 0:
                 print('Done')
             return self
 
-        # If still not done, prep to fit next
-        if self._fit_estimators < self.max_n_estimators:
-            self.n_estimators += self._estimators_per_chunk
-
-        else:
-            return self
 
     def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
@@ -204,14 +205,15 @@ class StreamingRFC(RandomForestClassifier):
 
 if __name__ == '__main__':
 
-    data = pd.read_csv('sample_data.csv')
+    data = pd.read_csv('../data/sample_data.csv')
     x = data[[c for c in data if c != 'target']]
     y = data[['target']].values.squeeze()
 
-    srfc = StreamingRFC(n_estimators=5,
+    srfc = StreamingRFC(n_estimators_per_chunk=5,
                         max_n_estimators=100)
 
-    for i in range(100):
-        srfc.partial_fit(x, y)
+    for i in range(20):
+        srfc.partial_fit(x, y,
+                         classes=np.unique(y))
 
     srfc.max_n_estimators
