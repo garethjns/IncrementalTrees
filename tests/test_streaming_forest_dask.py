@@ -100,7 +100,8 @@ class TestDaskModel_1(Common, unittest.TestCase):
         """Set up model to test."""
         cls = cls._prep_data(cls)
         cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=1,
-                                           max_n_estimators=39))
+                                           max_n_estimators=39,
+                                           verbose=1))
 
         # Set expected number of estimators
         # This should be set manually depending on data.
@@ -117,7 +118,8 @@ class TestDaskModel_2(Common, unittest.TestCase):
         cls = cls._prep_data(cls)
         cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=2,
                                            n_jobs=-1,
-                                           max_n_estimators=np.inf))
+                                           max_n_estimators=np.inf,
+                                           verbose=1))
 
         # Set expected number of estimators
         cls.expected_n_estimators = 20
@@ -133,7 +135,8 @@ class TestDaskModel_3(Common, unittest.TestCase):
         cls = cls._prep_data(cls)
         cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=20,
                                            n_jobs=-1,
-                                           max_n_estimators=np.inf))
+                                           max_n_estimators=np.inf,
+                                           verbose=1))
 
         # Set expected number of estimators
         cls.expected_n_estimators = 200
@@ -150,7 +153,8 @@ class TestDaskModel_4(Common, unittest.TestCase):
         cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=1,
                                            n_jobs=-1,
                                            max_n_estimators=np.inf,
-                                           max_features=cls.x.shape[1]))
+                                           max_features=cls.x.shape[1],
+                                           verbose=1))
 
         # Set expected number of estimators
         cls.expected_n_estimators = 10

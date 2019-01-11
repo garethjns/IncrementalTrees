@@ -4,11 +4,12 @@ import dask_ml.cluster
 from dask_ml.wrappers import Incremental
 import dask as dd
 from dask.distributed import Client, LocalCluster
+import numpy as np
 
 
 def run_on_blobs():
 
-    x, y = dask_ml.datasets.make_blobs(n_samples=1e6,
+    x, y = dask_ml.datasets.make_blobs(n_samples=1e7,
                                        chunks=1e4,
                                        random_state=0,
                                        centers=3)
@@ -18,12 +19,15 @@ def run_on_blobs():
 
     print(f"Rows: {x.shape[0].compute()}")
 
-    ests_per_chunk = 2
+    ests_per_chunk = 4
     chunks = len(x.divisions)
 
-    srfc = Incremental(StreamingRFC(n_estimators=ests_per_chunk,
-                                    max_n_estimators=chunks * ests_per_chunk))
-    srfc.fit(x, y)
+    srfc = Incremental(StreamingRFC(n_estimators_per_chunk=ests_per_chunk,
+                                    max_n_estimators=np.inf,
+                                    verbose=1,
+                                    n_jobs=4))
+    srfc.fit(x, y,
+             classes=y.unique().compute())
 
 
 # Create, connect, and run on local cluster.
