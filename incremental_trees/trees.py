@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from typing import Union
 import time
+import warnings
 
 
 class StreamingRFC(RandomForestClassifier):
@@ -26,7 +27,7 @@ class StreamingRFC(RandomForestClassifier):
                  oob_score=False,
                  random_state=None,
                  verbose=0,
-                 warm_start=False,
+                 warm_start: bool=True,
                  max_n_estimators=10) -> None:
         """
         :param bootstrap:
@@ -193,7 +194,10 @@ class StreamingRFC(RandomForestClassifier):
             counts[:, present_classes] += 1
 
         # Normalise predictions against counts
-        norm_prob = preds / counts
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            norm_prob = preds / counts
+
         # And remove nans (0/0) and infs (n/0)
         norm_prob[np.isnan(norm_prob) | np.isinf(norm_prob)] = 0
 
