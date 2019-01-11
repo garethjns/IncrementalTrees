@@ -7,9 +7,7 @@ import time
 
 
 class StreamingRFC(RandomForestClassifier):
-    """
-    Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params.
-    """
+    """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
     def __init__(self,
                  bootstrap=True,
                  class_weight=None,
@@ -98,7 +96,7 @@ class StreamingRFC(RandomForestClassifier):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def partial_fit(self, x: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
+    def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
                     classes: Union[list, np.ndarray]=None):
         """
         Fit a single DTC using the given subset of x and y.
@@ -145,7 +143,7 @@ class StreamingRFC(RandomForestClassifier):
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
             t0 = time.time()
-            self.fit(x, y)
+            self.fit(X, y)
             t1 = time.time()
 
             if self.verbose > 0:
@@ -163,7 +161,6 @@ class StreamingRFC(RandomForestClassifier):
             if self.verb > 0:
                 print('Done')
             return self
-
 
     def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
