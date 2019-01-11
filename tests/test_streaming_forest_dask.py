@@ -8,7 +8,7 @@ import dask_ml.datasets
 from dask_ml.wrappers import Incremental
 
 
-class Common(unittest.TestCase):
+class Common:
     """
     Standard tests to run on supplied model and data.
 
@@ -35,30 +35,44 @@ class Common(unittest.TestCase):
             cls.cluster = LocalCluster(processes=True,
                                        n_workers=4,
                                        threads_per_worker=2,
-                                       scheduler_port=8585,
-                                       diagnostics_port=8586)
-        except RuntimeError:
-            cls.cluster = 'localhost:8585'
+                                       scheduler_port=8586,
+                                       diagnostics_port=8587)
+        except (OSError, AttributeError):
+            cls.cluster = 'localhost:8586'
+
+        cls.client = Client(cls.cluster)
 
         # Set helper valuez
-        cls.chunk_size = 10
-        cls.n_chunks = int(cls.n_samples / cls.chunk_size)
         cls.samples_per_chunk = int(cls.n_samples / cls.n_chunks)
+
+    def _prep_data(self):
+        self.n_samples = 1e5
+        self.chunk_size = 1e4
+        self.n_chunks = np.ceil(self.n_samples / self.chunk_size).astype(int)
+
+        self.x, self.y = dask_ml.datasets.make_blobs(n_samples=self.n_samples,
+                                                     chunks=self.chunk_size,
+                                                     random_state=0,
+                                                     n_features=40,
+                                                     centers=2,
+                                                     cluster_std=100)
+
+        return self
 
     @classmethod
     def tearDownClass(cls) -> None:
         cls.client.close()
-        if type(cls.cluster) != 'str':
+        if type(cls.cluster) != str:
             cls.cluster.close()
 
     def test_fit(self):
         """Test the supplied model by wrapping with dask Incremental and calling .fit."""
         self.mod.fit(self.x, self.y,
-                 classes=np.unique(self.y))
+                     classes=np.unique(self.y))
 
-        # Set expected number of esitmators in class set up
+        # Set expected number of estimators in class set up
         # Check it matches with parameters
-        expect_ = min((self.mod._estimators_per_chunk * self.n_chunks), self.mod.max_n_estimators)
+        expect_ = min((self.mod.estimator.n_estimators_per_chunk * self.n_chunks), self.mod.estimator.max_n_estimators)
         self.assertEqual(expect_, self.expected_n_estimators)
         # Then check the model matches the validated expectation
         self.assertEqual(len(self.mod.estimators_), self.expected_n_estimators)
@@ -80,91 +94,66 @@ class Common(unittest.TestCase):
         pass
 
 
-class TestDaskModel_1(Common):
+class TestDaskModel_1(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
-        cls.n_samples = 1000
-        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e5,
-                                                   chunks=1e4,
-                                                   random_state=0,
-                                                   n_features=40,
-                                                   centers=2,
-                                                   cluster_std=100)
-
-        cls.mod = Incremental(StreamingRFC(n_estimators=1,
+        cls = cls._prep_data(cls)
+        cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=1,
                                            max_n_estimators=39))
 
         # Set expected number of estimators
-        cls.expected_n_estimators = 39
+        # This should be set manually depending on data.
+        cls.expected_n_estimators = 10
 
         # Set helper values
         super().setUpClass()
 
 
-class TestDaskModel_2(Common):
+class TestDaskModel_2(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
-        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e5,
-                                                   chunks=1e4,
-                                                   random_state=0,
-                                                   n_features=40,
-                                                   centers=2,
-                                                   cluster_std=100)
-
-        cls.mod = Incremental(StreamingRFC(n_estimators=2,
+        cls = cls._prep_data(cls)
+        cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=2,
                                            n_jobs=-1,
                                            max_n_estimators=np.inf))
 
         # Set expected number of estimators
-        cls.expected_n_estimators = 39
+        cls.expected_n_estimators = 20
 
         # Set helper values
         super().setUpClass()
 
 
-class TestDaskModel_3(Common):
+class TestDaskModel_3(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
-        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e5,
-                                                   chunks=1e4,
-                                                   random_state=0,
-                                                   n_features=40,
-                                                   centers=2,
-                                                   cluster_std=100)
-
-        cls.mod = Incremental(StreamingRFC(n_estimators=20,
+        cls = cls._prep_data(cls)
+        cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=20,
                                            n_jobs=-1,
                                            max_n_estimators=np.inf))
 
         # Set expected number of estimators
-        cls.expected_n_estimators = 39
+        cls.expected_n_estimators = 200
 
         # Set helper values
         super().setUpClass()
 
 
-class TestDaskModel_4(Common):
+class TestDaskModel_4(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
-        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e5,
-                                                   chunks=1e4,
-                                                   random_state=0,
-                                                   n_features=40,
-                                                   centers=2,
-                                                   cluster_std=100)
-
-        cls.mod = Incremental(StreamingRFC(n_estimators=cls.n_estimators_per_chunk,
+        cls = cls._prep_data(cls)
+        cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=1,
                                            n_jobs=-1,
                                            max_n_estimators=np.inf,
                                            max_features=cls.x.shape[1]))
 
         # Set expected number of estimators
-        cls.expected_n_estimators = 39
+        cls.expected_n_estimators = 10
 
         # Set helper values
         super().setUpClass()
-
