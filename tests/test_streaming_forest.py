@@ -8,7 +8,7 @@ import dask_ml.datasets
 from dask_ml.wrappers import Incremental
 
 
-class Common(unittest.TestCase):
+class Common:
     """
     Standard tests to run on supplied model and data.
 
@@ -62,7 +62,7 @@ class Common(unittest.TestCase):
 
         # Set expected number of esitmators in class set up
         # Check it matches with parameters
-        expect_ = min((self.mod._estimators_per_chunk * self.n_chunks), self.mod.max_n_estimators)
+        expect_ = min((self.mod.n_estimators_per_chunk * self.n_chunks), self.mod.max_n_estimators)
         self.assertEqual(expect_, self.expected_n_estimators)
         # Then check the model matches the validated expectation
         self.assertEqual(len(self.mod.estimators_), self.expected_n_estimators)
@@ -84,7 +84,7 @@ class Common(unittest.TestCase):
         pass
 
 
-class TestStreamingRFC_1(Common):
+class TestStreamingRFC_1(Common, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
@@ -101,7 +101,7 @@ class TestStreamingRFC_1(Common):
                                                    centers=2,
                                                    cluster_std=100)
 
-        cls.mod = StreamingRFC(n_estimators=1,
+        cls.mod = StreamingRFC(n_estimators_per_chunk=1,
                                max_n_estimators=np.inf)
 
         # Set expected number of estimators
@@ -111,7 +111,7 @@ class TestStreamingRFC_1(Common):
         super().setUpClass()
 
 
-class TestStreamingRFC_2(Common):
+class TestStreamingRFC_2(Common, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
@@ -128,7 +128,7 @@ class TestStreamingRFC_2(Common):
                                                    centers=2,
                                                    cluster_std=100)
 
-        cls.mod = StreamingRFC(n_estimators=1,
+        cls.mod = StreamingRFC(n_estimators_per_chunk=1,
                                max_n_estimators=39)
 
         # Set expected number of estimators
@@ -138,7 +138,7 @@ class TestStreamingRFC_2(Common):
         super().setUpClass()
 
 
-class TestStreamingRFC_3(Common):
+class TestStreamingRFC_3(Common, unittest.TestCase):
     """
     Test SRFC with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
@@ -155,7 +155,7 @@ class TestStreamingRFC_3(Common):
                                                    centers=2,
                                                    cluster_std=100)
 
-        cls.mod = StreamingRFC(n_estimators=3,
+        cls.mod = StreamingRFC(n_estimators_per_chunk=3,
                                n_jobs=-1,
                                max_n_estimators=np.inf)
 
@@ -166,7 +166,7 @@ class TestStreamingRFC_3(Common):
         super().setUpClass()
 
 
-class TestStreamingRFC_4(Common):
+class TestStreamingRFC_4(Common, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
@@ -183,7 +183,7 @@ class TestStreamingRFC_4(Common):
                                                    centers=2,
                                                    cluster_std=100)
 
-        cls.mod = StreamingRFC(n_estimators=1,
+        cls.mod = StreamingRFC(n_estimators_per_chunk=1,
                                max_features=cls.x.shape[1],
                                max_n_estimators=np.inf)
 
@@ -194,7 +194,7 @@ class TestStreamingRFC_4(Common):
         super().setUpClass()
 
 
-class TestStreamingRFC_5(Common):
+class TestStreamingRFC_5(Common, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
@@ -211,7 +211,7 @@ class TestStreamingRFC_5(Common):
                                                    centers=2,
                                                    cluster_std=100)
 
-        cls.mod = StreamingRFC(n_estimators=3,
+        cls.mod = StreamingRFC(n_estimators_per_chunk=3,
                                n_jobs=-1,
                                max_features=cls.x.shape[1],
                                max_n_estimators=np.inf)
