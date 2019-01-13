@@ -1,11 +1,8 @@
 import unittest
 import numpy as np
 from incremental_trees.trees import StreamingRFC
-from sklearn.datasets import make_blobs
-from dask.distributed import Client, LocalCluster
 import dask_ml
 import dask_ml.datasets
-from dask_ml.wrappers import Incremental
 
 
 class Common:
