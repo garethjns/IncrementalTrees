@@ -218,3 +218,32 @@ class TestStreamingRFC_5(Common, unittest.TestCase):
 
         # Set helper values
         super().setUpClass()
+
+
+class TestStreamingRFC_5(Common, unittest.TestCase):
+    """
+    Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
+
+    No limit on total models, 3 estimators per row subset.
+    """
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls.n_samples = 1000
+        cls.x, cls.y = dask_ml.datasets.make_blobs(n_samples=2e5,
+                                                   chunks=1e4,
+                                                   random_state=0,
+                                                   n_features=40,
+                                                   centers=2,
+                                                   cluster_std=100)
+
+        cls.mod = StreamingRFC(n_estimators_per_chunk=3,
+                               n_jobs=-1,
+                               max_features=cls.x.shape[1],
+                               max_n_estimators=np.inf)
+
+        # Set expected number of estimators
+        cls.expected_n_estimators = 300
+
+        # Set helper values
+        super().setUpClass()
