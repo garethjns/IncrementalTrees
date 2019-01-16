@@ -1,10 +1,10 @@
 import unittest
 import numpy as np
 import pandas as pd
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.trees import StreamingRFC, StreamingEXT
 
 
-class PrepareData:
+class Common:
     @classmethod
     def setUpClass(cls):
         data = pd.DataFrame({'a': (1, 2, 3, 4, 5),
@@ -18,12 +18,6 @@ class PrepareData:
         cls.x = data[[c for c in data if c != 'target']]
         cls.y = data['target']
 
-
-class TestInconsistentClasses(PrepareData, unittest.TestCase):
-    def setUp(self):
-        self.mod = StreamingRFC(n_estimators_per_chunk=1,
-                                max_n_estimators=np.inf)
-
     def test_none_on_second_call(self):
         # Fit with 2 classes
         self.mod.partial_fit(self.x[0:6], self.y[0:6],
@@ -35,7 +29,6 @@ class TestInconsistentClasses(PrepareData, unittest.TestCase):
         self.mod.predict(self.x)
 
     def test_correct_on_second_call(self):
-
         # Fit with 2 classes
         self.mod.partial_fit(self.x[0:6], self.y[0:6],
                              classes=np.array([1, 2, 3]))
@@ -58,3 +51,15 @@ class TestInconsistentClasses(PrepareData, unittest.TestCase):
         self.mod.partial_fit(self.x[0:6], self.y[0:6],
                              classes=np.array([1, 2]))
         self.mod.predict(self.x[0:6])
+
+
+class TestInconsistentClassesRFC(Common, unittest.TestCase):
+    def setUp(self):
+        self.mod = StreamingRFC(n_estimators_per_chunk=1,
+                                max_n_estimators=np.inf)
+
+
+class TestInconsistentClassesEXT(Common, unittest.TestCase):
+    def setUp(self):
+        self.mod = StreamingEXT(n_estimators_per_chunk=1,
+                                max_n_estimators=np.inf)
