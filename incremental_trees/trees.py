@@ -134,7 +134,7 @@ class Overloads:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+    def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
             """
             Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't parallel?
     ​
