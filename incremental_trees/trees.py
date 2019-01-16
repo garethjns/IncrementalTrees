@@ -1,4 +1,5 @@
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from sklearn.tree import ExtraTreeClassifier
 from sklearn.utils.multiclass import unique_labels
 import pandas as pd
 import numpy as np
@@ -52,7 +53,129 @@ def _check_partial_fit_first_call(clf,
     return False
 
 
-class StreamingRFC(RandomForestClassifier):
+class Additions:
+    def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
+                    classes: Union[list, np.ndarray] = None):
+        """
+        Fit a single DTC using the given subset of x and y.
+​
+        Passes subset to fit, rather than using the same data each time. Wrap with Dask Incremental to handle subset
+        feeding.
+​
+        First call needs to be supplied with the expected classes (similar to existing models with .partial_fit())
+        in case not all classes are present in the first subset.
+
+        Additionally, the case where not all classes are presented in the first or subsequent subsets needs to be
+        handled. For the RandomForestClassifier, tree predictions are averaged in
+        sklearn.ensemble.forest.accumulate_prediction unction. This sums the output matrix with dimensions
+        n rows x n classes and fails if the class dimension differs.
+        The class dimension is defined at the individual estimator level during the .fit() call, which sets the
+        following attributes:
+            - self.n_outputs_ = y.shape[1], which is then used by _validate_y_class_weight()), always called in .fit()
+              to set:
+                - self.classes_
+                - self.n_classes_
+
+        This object sets classes_ and n_classes_ depending on the supplied classes. The Individual trees set theirs
+        depending on the data available in the subset. The predict_proba method is modified to standardise shape to the
+        dimensions defined in this object.
+​
+        :param x:
+        :param y:
+        :return:
+        """
+
+        # Set classes for forest (this only needs to be done once).
+        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
+        # Check classes_ is set, or provided
+        # Returns false if nothing to do
+        classes_need_setting = _check_partial_fit_first_call(self, classes)
+
+        # If classes not set, set
+        # Above will error if not set and classes = None
+        if classes_need_setting:
+            self.classes_ = np.array(classes)
+            self.n_classes_ = len(classes)
+
+        # Fit the next estimator, if not done
+        if self._fit_estimators < self.max_n_estimators:
+            t0 = time.time()
+            self.fit(X, y)
+            t1 = time.time()
+
+            if self.verbose > 0:
+                print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self.n_estimators_per_chunk} "
+                      f"/ {self.max_n_estimators}")
+                print(f"Fit time: {round(t1 - t0, 2)}")
+                print(len(self.estimators_))
+            self._fit_estimators += self.n_estimators_per_chunk
+
+            # If still not done, prep to fit next
+            if self._fit_estimators < self.max_n_estimators:
+                self.n_estimators += self.n_estimators_per_chunk
+
+        else:
+            if self.verb > 0:
+                print('Done')
+            return self
+
+
+class Overloads:
+    def set_params(self,
+                   **kwargs) -> None:
+        """
+        Ensure warm_Start is set to true, otherwise set other params as usual.
+
+        :param kwargs:
+        """
+        # Warm start should be true to get .fit() to keep existing estimators.
+        kwargs['warm_start'] = True
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+        def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+            """
+            Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't parallel?
+    ​
+            The .predict() method (sklearn.tree.tree.BaseDecisionTree.predict()) sets the output shape using:
+                # Classification
+                if is_classifier(self):
+                    if self.n_outputs_ == 1:
+                        return self.classes_.take(np.argmax(proba, axis=1), axis=0)
+                    else:
+                       [Not considering this yet]
+
+            :param x:
+            :return:
+            """
+            # Prepare expected output shape
+            preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+                             dtype=np.float32)
+            counts = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+                              dtype=np.int16)
+
+            for e in self.estimators_:
+                # Get the prediction from the tree
+                est_preds = e.predict_proba(x)
+                # Get the indexes of the classes present
+                present_classes = e.classes_.astype(int)
+                # Sum these in to the correct array columns
+                preds[:, present_classes] += est_preds
+                counts[:, present_classes] += 1
+
+            # Normalise predictions against counts
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                norm_prob = preds / counts
+
+            # And remove nans (0/0) and infs (n/0)
+            norm_prob[np.isnan(norm_prob) | np.isinf(norm_prob)] = 0
+
+            return norm_prob
+
+
+class StreamingRFC(Additions, Overloads, RandomForestClassifier):
     """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
     def __init__(self,
                  bootstrap=True,
@@ -129,137 +252,90 @@ class StreamingRFC(RandomForestClassifier):
                         max_n_estimators=max_n_estimators,
                         verb=0)
 
-    def set_params(self,
-                   **kwargs) -> None:
-        """
-        Ensure warm_Start is set to true, otherwise set other params as usual.
 
-        :param kwargs:
-        """
-        # Warm start should be true to get .fit() to keep existing estimators.
-        kwargs['warm_start'] = True
+class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
+    """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
+    def __init__(self,
+                 n_estimators_per_chunk: int=1,
+                 n_estimators: bool=None,
+                 max_n_estimators=np.inf,
+                 criterion="gini",
+                 max_depth=None,
+                 min_samples_split=2,
+                 min_samples_leaf=1,
+                 min_weight_fraction_leaf=0.,
+                 max_features="auto",
+                 max_leaf_nodes=None,
+                 min_impurity_decrease=0.,
+                 min_impurity_split=None,
+                 bootstrap=False,
+                 oob_score=False,
+                 n_jobs=None,
+                 random_state=None,
+                 verbose=0,
+                 warm_start=True,
+                 class_weight=None):
 
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        super(ExtraTreesClassifier, self).__init__(
+            base_estimator=ExtraTreeClassifier(),
+            n_estimators=n_estimators_per_chunk,
+            estimator_params=("criterion", "max_depth", "min_samples_split",
+                              "min_samples_leaf", "min_weight_fraction_leaf",
+                              "max_features", "max_leaf_nodes",
+                              "min_impurity_decrease", "min_impurity_split",
+                              "random_state"),
+            bootstrap=bootstrap,
+            oob_score=oob_score,
+            n_jobs=n_jobs,
+            random_state=random_state,
+            verbose=verbose,
+            warm_start=warm_start,
+            class_weight=class_weight)
 
-    def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
-                    classes: Union[list, np.ndarray]=None):
-        """
-        Fit a single DTC using the given subset of x and y.
-​
-        Passes subset to fit, rather than using the same data each time. Wrap with Dask Incremental to handle subset
-        feeding.
-​
-        First call needs to be supplied with the expected classes (similar to existing models with .partial_fit())
-        in case not all classes are present in the first subset.
-        TODO: This currently expected every call, but alternative could be checked with the existing sklearn mechanism.
-​
-        Additionally, the case where not all classes are presented in the first or subsequent subsets needs to be
-        handled. For the RandomForestClassifier, tree predictions are averaged in
-        sklearn.ensemble.forest.accumulate_prediction unction. This sums the output matrix with dimensions
-        n rows x n classes and fails if the class dimension differs.
-        The class dimension is defined at the individual estimator level during the .fit() call, which sets the
-        following attributes:
-            - self.n_outputs_ = y.shape[1], which is then used by _validate_y_class_weight()), always called in .fit()
-              to set:
-                - self.classes_
-                - self.n_classes_
 
-        This object sets classes_ and n_classes_ depending on the supplied classes. The Individual trees set theirs
-        depending on the data available in the subset. The predict_proba method is modified to standardise shape to the
-        dimensions defined in this object.
-​
-        :param x:
-        :param y:
-        :return:
-        """
+        self._fit_estimators = 0
+        self.max_n_estimators = max_n_estimators
+        self.n_estimators_per_chunk = n_estimators
+        self.criterion = criterion
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
+        self.max_features = max_features
+        self.max_leaf_nodes = max_leaf_nodes
+        self.min_impurity_decrease = min_impurity_decrease
+        self.min_impurity_split = min_impurity_split
 
-        # Set classes for forest (this only needs to be done once).
-        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
-        # Check classes_ is set, or provided
-        # Returns false if nothing to do
-        classes_need_setting = _check_partial_fit_first_call(self, classes)
-
-        # If classes not set, set
-        # Above will error if not set and classes = None
-        if classes_need_setting:
-            self.classes_ = np.array(classes)
-            self.n_classes_ = len(classes)
-
-        # Fit the next estimator, if not done
-        if self._fit_estimators < self.max_n_estimators:
-            t0 = time.time()
-            self.fit(X, y)
-            t1 = time.time()
-
-            if self.verbose > 0:
-                print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self.n_estimators_per_chunk} "
-                      f"/ {self.max_n_estimators}")
-                print(f"Fit time: {round(t1 - t0, 2)}")
-                print(len(self.estimators_))
-            self._fit_estimators += self.n_estimators_per_chunk
-
-            # If still not done, prep to fit next
-            if self._fit_estimators < self.max_n_estimators:
-                self.n_estimators += self.n_estimators_per_chunk
-
-        else:
-            if self.verb > 0:
-                print('Done')
-            return self
-
-    def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-        """
-        Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't parallel?
-​
-        The .predict() method (sklearn.tree.tree.BaseDecisionTree.predict()) sets the output shape using:
-            # Classification
-            if is_classifier(self):
-                if self.n_outputs_ == 1:
-                    return self.classes_.take(np.argmax(proba, axis=1), axis=0)
-                else:
-                   [Not considering this yet]
-
-        :param x:
-        :return:
-        """
-        # Prepare expected output shape
-        preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
-                         dtype=np.float32)
-        counts = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
-                          dtype=np.int16)
-
-        for e in self.estimators_:
-            # Get the prediction from the tree
-            est_preds = e.predict_proba(x)
-            # Get the indexes of the classes present
-            present_classes = e.classes_.astype(int)
-            # Sum these in to the correct array columns
-            preds[:, present_classes] += est_preds
-            counts[:, present_classes] += 1
-
-        # Normalise predictions against counts
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            norm_prob = preds / counts
-
-        # And remove nans (0/0) and infs (n/0)
-        norm_prob[np.isnan(norm_prob) | np.isinf(norm_prob)] = 0
-
-        return norm_prob
+        self.set_params(n_estimators_per_chunk=n_estimators_per_chunk)
 
 
 if __name__ == '__main__':
+    from sklearn.datasets import make_blobs
 
-    data = pd.read_csv('../data/sample_data.csv')
-    x = data[[c for c in data if c != 'target']]
-    y = data[['target']].values.squeeze()
+    for _ in range(10):
+        x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
+                          centers=2, cluster_std=100)
 
-    srfc = StreamingRFC(n_estimators_per_chunk=5,
-                        max_n_estimators=100)
+        srfc = StreamingRFC(n_estimators_per_chunk=5,
+                            max_n_estimators=100,
+                            n_jobs=5)
 
-    for i in range(20):
-        srfc.partial_fit(x, y,
-                         classes=np.unique(y))
+        chunk_size = int(2e3)
+        for i in range(20):
+            sample_idx = np.random.randint(0, x.shape[0], chunk_size)
+            srfc.partial_fit(x[sample_idx], y[sample_idx],
+                             classes=np.unique(y))
 
-    srfc.max_n_estimators
+        print(f"SRFC: {srfc.score(x, y)}")
+
+        sext = StreamingEXT(n_estimators_per_chunk=5,
+                            max_n_estimators=100,
+                            n_jobs=5)
+
+        for i in range(20):
+            sample_idx = np.random.randint(0, x.shape[0], chunk_size)
+            sext.partial_fit(x[sample_idx], y[sample_idx],
+                             classes=np.unique(y))
+
+        print(f"SEXT: {sext.score(x, y)}")
+
