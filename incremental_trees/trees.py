@@ -115,7 +115,7 @@ class Additions:
                 self.n_estimators += self.n_estimators_per_chunk
 
         else:
-            if self.verb > 0:
+            if self.verbose > 0:
                 print('Done')
             return self
 
