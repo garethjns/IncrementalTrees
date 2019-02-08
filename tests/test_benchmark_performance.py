@@ -1,8 +1,8 @@
 import unittest
 import math
 import numpy as np
-from incremental_trees.trees import StreamingRFC
-from sklearn.ensemble.forest import RandomForestClassifier
+from incremental_trees.trees import StreamingRFC, StreamingEXT
+from sklearn.ensemble.forest import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -69,7 +69,12 @@ class PerformanceComparisons:
         :return:
         """
         # Will be available in actual test.
-        self.assertEqual(self.rfc_n_estimators, self.srfc_n_estimators_per_chunk * self.srfc_n_partial_fit_calls)
+        n_rows = self.x_train.shape[0]
+
+        self.assertEqual(self.rfc_n_estimators * n_rows,
+                         (self.srfc_n_estimators_per_chunk *
+                          self.srfc_n_partial_fit_calls *
+                          int(n_rows / self.srfc_n_partial_fit_calls)))
 
     def _fit_srfc(self,
                   sequential: bool=True,
@@ -125,31 +130,35 @@ class PerformanceComparisons:
 
     def test_benchmark_sample(self):
         """
-        Compare models where srfc is train on a number of random samples from the training data.
+        Compare models where srfc is trained on a number of random samples from the training data.
         """
 
         self.srfc_sam = self._fit_srfc(sequential=False)
         self.srfc_sam_report, self.srfc_sam_train_auc, self.srfc_sam_test_auc = self._mod_report(mod=self.srfc_sam)
 
         self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.rfc_test_auc,
-                                     rel_tol=0.04))
+                                     rel_tol=0.05))
         self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.log_reg_test_auc,
                                      rel_tol=0.05))
 
+        # self._assert_same_n_rows()
+
     def test_benchmark_sequential(self):
         """
-        Compare models where srfc is train on sequential chunks of the data.
+        Compare models where srfc is trained on sequential chunks of the data.
         """
         self.srfc_seq = self._fit_srfc(sequential=True)
         self.srfc_seq_report, self.srfc_seq_train_auc, self.srfc_seq_test_auc = self._mod_report(mod=self.srfc_seq)
 
         self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.rfc_test_auc,
-                                     rel_tol=0.04))
+                                     rel_tol=0.05))
         self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.log_reg_test_auc,
                                      rel_tol=0.05))
 
+        # self._assert_same_n_rows()
 
-class Benchmark1(PerformanceComparisons, unittest.TestCase):
+
+class RFCBenchmark1(PerformanceComparisons, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -163,10 +172,8 @@ class Benchmark1(PerformanceComparisons, unittest.TestCase):
 
         cls._fit_benchmarks(cls)
 
-        # cls._assert_same_n_rows(cls)
 
-
-class Benchmark2(PerformanceComparisons, unittest.TestCase):
+class RFCBenchmark2(PerformanceComparisons, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -180,10 +187,8 @@ class Benchmark2(PerformanceComparisons, unittest.TestCase):
 
         cls._fit_benchmarks(cls)
 
-        # cls._assert_same_n_rows(cls)
 
-
-class Benchmark3(PerformanceComparisons, unittest.TestCase):
+class RFCBenchmark3(PerformanceComparisons, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -197,4 +202,47 @@ class Benchmark3(PerformanceComparisons, unittest.TestCase):
 
         cls._fit_benchmarks(cls)
 
-        # cls._assert_same_n_rows(cls)
+
+class ExtBenchmark1(PerformanceComparisons, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.rfc_n_estimators = 10
+        cls.srfc_n_estimators_per_chunk = 1
+        cls.srfc_n_partial_fit_calls = 10
+
+        cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
+        cls.srfc = StreamingEXT(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+
+        cls._fit_benchmarks(cls)
+
+
+class ExtBenchmark2(PerformanceComparisons, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.rfc_n_estimators = 100
+        cls.srfc_n_estimators_per_chunk = 10
+        cls.srfc_n_partial_fit_calls = 10
+
+        cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
+        cls.srfc = StreamingEXT(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+
+        cls._fit_benchmarks(cls)
+
+
+class ExtBenchmark3(PerformanceComparisons, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.rfc_n_estimators = 100
+        cls.srfc_n_estimators_per_chunk = 1
+        cls.srfc_n_partial_fit_calls = 10
+
+        cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
+        cls.srfc = StreamingEXT(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+
+        cls._fit_benchmarks(cls)
