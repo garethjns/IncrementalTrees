@@ -318,6 +318,7 @@ if __name__ == '__main__':
 
         srfc = StreamingRFC(n_estimators_per_chunk=5,
                             max_n_estimators=100,
+                            verbose=1,
                             n_jobs=5)
 
         chunk_size = int(2e3)
@@ -330,6 +331,7 @@ if __name__ == '__main__':
 
         sext = StreamingEXT(n_estimators_per_chunk=5,
                             max_n_estimators=100,
+                            verbose=1,
                             n_jobs=5)
 
         for i in range(20):
