@@ -23,10 +23,10 @@ Quick start:
    pip install dist/incremental_trees-0.2.tar
    ````
 # Usage
-Currently a Streaming version of RandomForestClassifier (StreamingRFC) is implemented in incremental_trees.trees. This works for binary and multiclass classification.
+Currently a Streaming version of RandomForestClassifier (StreamingRFC) and ExtraTreesClassifer (StreamingEXT) are implemented in incremental_trees.trees. They works for binary and multiclass classification.
 
 ## Examples
-See [notes/PerformanceComparisons.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisons.ipynb) and  [notes/PerformanceComparisonsDask.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisons.ipynb) for more examples and performance comparisons against RandomForest.
+See [notes/PerformanceComparisons.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisons.ipynb) and  [notes/PerformanceComparisonsDask.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisonsDask.ipynb) for more examples and performance comparisons against RandomForest.
 
 ### Feeding .partial_fit() manually 
 
