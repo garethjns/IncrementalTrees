@@ -1,6 +1,6 @@
-# Incremental trees v0.1
+# Incremental trees v0.2
 
-Adds partial fit method to sklearn's forest estimators to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
+Adds partial fit method to sklearn's forest estimators (currently RandomForestClassifier and ExtraTreesClassifier) to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
 
 These methods don't try and implement partial fitting for decision trees, rather they remove requirement that individual decision trees within forests are trained with the same data (or equally sized bootstraps).
 
@@ -16,11 +16,11 @@ Quick start:
    git clone https://github. com/garethjns/IncrementalTrees.git
    python -m pip install --upgrade pip setuptools wheel
    cd IncrementalTrees
-   python3 setup.py sdist bdist_wheel
+   python3 setup.py sdist
    ````
 3) pip install
    ````bash
-   pip install [the .tar.gz or .whl in dist/]
+   pip install dist/incremental_trees-0.2.tar
    ````
 # Usage
 Currently a Streaming version of RandomForestClassifier (StreamingRFC) is implemented in incremental_trees.trees. This works for binary and multiclass classification.
@@ -114,7 +114,7 @@ with LocalCluster(processes=False,
                                     max_n_estimators=np.inf,
                                     n_jobs=4))
     
-    # Call fit directly, specifying the expect classes
+    # Call fit directly, specifying the expected classes
     srfc.fit(x, y,
              classes=delayed(np.unique(y)).compute())
              
