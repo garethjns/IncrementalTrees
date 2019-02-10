@@ -85,22 +85,10 @@ class Additions:
         :return:
         """
 
-        # Set classes for forest (this only needs to be done once).
-        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
-        # Check classes_ is set, or provided
-        # Returns false if nothing to do
-        classes_need_setting = _check_partial_fit_first_call(self, classes)
-
-        # If classes not set, set
-        # Above will error if not set and classes = None
-        if classes_need_setting:
-            self.classes_ = np.array(classes)
-            self.n_classes_ = len(classes)
-
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
             t0 = time.time()
-            self.fit(X, y)
+            super().fit(X, y)
             t1 = time.time()
 
             if self.verbose > 0:
@@ -119,6 +107,14 @@ class Additions:
                 print('Done')
             return self
 
+    def _sampled_partial_fit(self,
+                             x, y):
+
+        for _ in range(self.spf_n_fits):
+            idx = np.random.randint(0, x.shape[0], self.spf_n_samples)
+            self.partial_fit(x[idx, :], y[idx],
+                             classes=np.unique(y))
+
 
 class Overloads:
     def set_params(self,
@@ -133,6 +129,30 @@ class Overloads:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def fit(self, *args,
+            classes=None):
+        """
+        This fit handles calling either super().fit or partial_fit depending on the caller.
+
+        :param dask: If true, allow dask to feed partial fit by calling super().fit, which will handle calling
+                     .partial_fit.
+                     If False (for example to use with GridSearch or RandomizedSearchCV) uses 'spf_' params to
+                     control feeding .partial_fit() with ._sampled_partial_fit().
+        """
+
+        if not self.dask:
+
+            if self.verbose > 0:
+                print('Running spf')
+            self._sampled_partial_fit(*args)
+            return self
+
+        else:
+            super().fit(*args)
+            return self
+
+        return self
 
     def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
             """
@@ -196,6 +216,7 @@ class StreamingRFC(Additions, Overloads, RandomForestClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start: bool=True,
+                 dask: bool=True,
                  max_n_estimators=10) -> None:
         """
         :param bootstrap:
@@ -249,6 +270,7 @@ class StreamingRFC(Additions, Overloads, RandomForestClassifier):
                         verbose=verbose,
                         warm_start=warm_start,
                         _fit_estimators=0,
+                        dask=dask,
                         max_n_estimators=max_n_estimators,
                         verb=0)
 
@@ -274,7 +296,11 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start=True,
-                 class_weight=None):
+                 class_weight=None,
+                 dask: bool=True,
+                 spf_on=False,
+                 spf_n_fits=100,
+                 spf_n_samples=100):
 
         super(ExtraTreesClassifier, self).__init__(
             base_estimator=ExtraTreeClassifier(),
@@ -292,7 +318,6 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
             warm_start=warm_start,
             class_weight=class_weight)
 
-
         self._fit_estimators = 0
         self.max_n_estimators = max_n_estimators
         self.n_estimators_per_chunk = n_estimators
@@ -306,7 +331,12 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
         self.min_impurity_decrease = min_impurity_decrease
         self.min_impurity_split = min_impurity_split
 
-        self.set_params(n_estimators_per_chunk=n_estimators_per_chunk)
+        # Set additional params.
+        self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
+                        spf_on=spf_on,
+                        spf_n_fits=spf_n_fits,
+                        spf_n_samples=spf_n_samples,
+                        dask=dask)
 
 
 if __name__ == '__main__':
