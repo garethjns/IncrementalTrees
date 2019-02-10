@@ -3,10 +3,10 @@ import numpy as np
 from incremental_trees.trees import StreamingEXT
 import dask_ml
 import dask_ml.datasets
-from tests.test_streaming_forest import Common
+from tests.test_streaming_forest import PartialFitTests
 
 
-class TestStreamingEXT_1(Common, unittest.TestCase):
+class TestStreamingEXT_1(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "random forest style" max features. ie, subset.
 
@@ -33,7 +33,7 @@ class TestStreamingEXT_1(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXT_2(Common, unittest.TestCase):
+class TestStreamingEXT_2(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "random forest style" max features. ie, subset.
 
@@ -60,7 +60,7 @@ class TestStreamingEXT_2(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXT_3(Common, unittest.TestCase):
+class TestStreamingEXT_3(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
@@ -88,7 +88,7 @@ class TestStreamingEXT_3(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXT_4(Common, unittest.TestCase):
+class TestStreamingEXT_4(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
@@ -116,7 +116,7 @@ class TestStreamingEXT_4(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXT_5(Common, unittest.TestCase):
+class TestStreamingEXT_5(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
@@ -145,7 +145,7 @@ class TestStreamingEXT_5(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXT_5(Common, unittest.TestCase):
+class TestStreamingEXT_5(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 

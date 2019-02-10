@@ -5,7 +5,7 @@ import dask_ml
 import dask_ml.datasets
 
 
-class Common:
+class PartialFitTests:
     """
     Standard tests to run on supplied model and data.
 
@@ -18,10 +18,9 @@ class Common:
     These are run without using Dask, so the subset passing to partial_fit is handled manually.
     """
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         """
         Set helper values from specified model/data. Need to super this from child setUpClass.
-        :return:
         """
         cls.chunk_size = 10
         cls.n_chunks = int(cls.n_samples / cls.chunk_size)
@@ -81,7 +80,36 @@ class Common:
         pass
 
 
-class TestStreamingRFC_1(Common, unittest.TestCase):
+class FitTests:
+    """
+    Test direct calls to.fit with dask off, which will use ._sampled_partial_fit() to feed partial_fit.
+    """
+    @classmethod
+    def setUpClass(cls):
+        """
+        Set helper values from specified model/data. Need to super this from child setUpClass.
+        :return:
+        """
+        # Need to send spf_
+        pass
+
+    def test_fit__sampled_partial_fit(self):
+        """With dask off, call .fit directly."""
+        pass
+
+    def test_gride_search(self):
+        """With dask off, try with sklearn GS."""
+        pass
+
+
+class TestStreaming_RFC_n(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        pass
+
+
+class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
@@ -108,7 +136,7 @@ class TestStreamingRFC_1(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_2(Common, unittest.TestCase):
+class TestStreamingRFC_2(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
@@ -135,7 +163,7 @@ class TestStreamingRFC_2(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_3(Common, unittest.TestCase):
+class TestStreamingRFC_3(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
@@ -163,7 +191,7 @@ class TestStreamingRFC_3(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_4(Common, unittest.TestCase):
+class TestStreamingRFC_4(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
@@ -191,7 +219,7 @@ class TestStreamingRFC_4(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_5(Common, unittest.TestCase):
+class TestStreamingRFC_5(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
@@ -220,7 +248,7 @@ class TestStreamingRFC_5(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_5(Common, unittest.TestCase):
+class TestStreamingRFC_5(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
