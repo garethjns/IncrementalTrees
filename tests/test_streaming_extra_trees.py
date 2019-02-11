@@ -3,7 +3,7 @@ import numpy as np
 from incremental_trees.trees import StreamingEXT
 import dask_ml
 import dask_ml.datasets
-from tests.test_streaming_forest import PartialFitTests
+from tests.test_streaming_forest import PartialFitTests, FitTests
 
 
 class TestStreamingEXT_1(PartialFitTests, unittest.TestCase):
@@ -171,4 +171,65 @@ class TestStreamingEXT_5(PartialFitTests, unittest.TestCase):
         cls.expected_n_estimators = 300
 
         # Set helper values
+        super().setUpClass()
+
+
+class TestStreamingEXT_6(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+
+        cls.spf_n_fits = 10
+        cls.spf_n_samples = 250
+        cls.dask_feeding = False
+        cls.n_estimators_per_sample = 1
+
+        cls.mod = StreamingEXT(verbose=1,
+                               n_estimators_per_chunk=cls.n_estimators_per_sample,
+                               max_n_estimators=np.inf,
+                               dask_feeding=cls.dask_feeding,
+                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_fits=cls.spf_n_fits)
+
+
+        super().setUpClass()
+
+
+class TestStreamingEXT_7(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls.spf_n_fits = 10
+        cls.spf_n_samples = 250
+        cls.dask_feeding = False
+        cls.n_estimators_per_sample = 10
+
+        cls.mod = StreamingEXT(verbose=1,
+                               n_estimators_per_chunk=cls.n_estimators_per_sample,
+                               max_n_estimators=np.inf,
+                               dask_feeding=cls.dask_feeding,
+                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_fits=cls.spf_n_fits)
+
+
+        super().setUpClass()
+
+
+class TestStreamingEXT_8(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+
+        cls.spf_n_fits = 20
+        cls.spf_n_samples = 100
+        cls.dask_feeding = False
+        cls.n_estimators_per_sample = 6
+
+        cls.mod = StreamingEXT(verbose=1,
+                               n_estimators_per_chunk=cls.n_estimators_per_sample,
+                               max_n_estimators=np.inf,
+                               dask_feeding=cls.dask_feeding,
+                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_fits=cls.spf_n_fits)
+
         super().setUpClass()

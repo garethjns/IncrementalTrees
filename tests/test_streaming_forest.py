@@ -3,6 +3,9 @@ import numpy as np
 from incremental_trees.trees import StreamingRFC
 import dask_ml
 import dask_ml.datasets
+import sklearn
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.base import clone
 
 
 class PartialFitTests:
@@ -87,26 +90,39 @@ class FitTests:
     @classmethod
     def setUpClass(cls):
         """
-        Set helper values from specified model/data. Need to super this from child setUpClass.
+        Set helper actual model from specified values. Need to super this from child setUpClass.
         :return:
         """
-        # Need to send spf_
-        pass
+        cls.expected_n_estimators = cls.spf_n_fits * cls.n_estimators_per_sample
+
+        cls.n_samples = 1000
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+                                                   random_state=0,
+                                                   n_features=40,
+                                                   centers=2,
+                                                   cluster_std=100)
+
+        cls.grid = RandomizedSearchCV(clone(cls.mod),
+                                      cv=4,
+                                      n_iter=10,
+                                      verbose=10,
+                                      param_distributions={'spf_n_samples': [100, 200, 300],
+                                                           'spf_n_fits': [10, 20, 30]})
 
     def test_fit__sampled_partial_fit(self):
         """With dask off, call .fit directly."""
-        pass
+        self.mod.fit(self.x, self.y)
 
-    def test_gride_search(self):
+    def test_predict(self):
+        """"""
+        self.mod.predict(self.x)
+
+    def test_n_estimators(self):
+        self.assertEqual(len(self.mod.estimators_), self.expected_n_estimators)
+
+    def test_grid_search(self):
         """With dask off, try with sklearn GS."""
-        pass
-
-
-class TestStreaming_RFC_n(FitTests, unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Set up model to test."""
-        pass
+        self.grid.fit(self.x, self.y)
 
 
 class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
@@ -126,7 +142,8 @@ class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
                                                    centers=2,
                                                    cluster_std=100)
 
-        cls.mod = StreamingRFC(n_estimators_per_chunk=1,
+        cls.mod = StreamingRFC(verbose=1,
+                               n_estimators_per_chunk=1,
                                max_n_estimators=np.inf)
 
         # Set expected number of estimators
@@ -274,4 +291,65 @@ class TestStreamingRFC_5(PartialFitTests, unittest.TestCase):
         cls.expected_n_estimators = 300
 
         # Set helper values
+        super().setUpClass()
+
+
+class TestStreaming_RFC_6(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+
+        cls.spf_n_fits = 10
+        cls.spf_n_samples = 250
+        cls.dask_feeding = False
+        cls.n_estimators_per_sample = 1
+
+        cls.mod = StreamingRFC(verbose=1,
+                               n_estimators_per_chunk=cls.n_estimators_per_sample,
+                               max_n_estimators=np.inf,
+                               dask_feeding=cls.dask_feeding,
+                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_fits=cls.spf_n_fits)
+
+
+        super().setUpClass()
+
+
+class TestStreaming_RFC_7(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls.spf_n_fits = 10
+        cls.spf_n_samples = 250
+        cls.dask_feeding = False
+        cls.n_estimators_per_sample = 10
+
+        cls.mod = StreamingRFC(verbose=1,
+                               n_estimators_per_chunk=cls.n_estimators_per_sample,
+                               max_n_estimators=np.inf,
+                               dask_feeding=cls.dask_feeding,
+                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_fits=cls.spf_n_fits)
+
+
+        super().setUpClass()
+
+
+class TestStreaming_RFC_8(FitTests, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+
+        cls.spf_n_fits = 20
+        cls.spf_n_samples = 100
+        cls.dask_feeding = False
+        cls.n_estimators_per_sample = 6
+
+        cls.mod = StreamingRFC(verbose=1,
+                               n_estimators_per_chunk=cls.n_estimators_per_sample,
+                               max_n_estimators=np.inf,
+                               dask_feeding=cls.dask_feeding,
+                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_fits=cls.spf_n_fits)
+
         super().setUpClass()
