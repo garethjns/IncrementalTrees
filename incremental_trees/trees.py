@@ -85,13 +85,26 @@ class Additions:
         :return:
         """
 
+        # Set classes for forest (this only needs to be done once).
+        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
+        # Check classes_ is set, or provided
+        # Returns false if nothing to do
+        classes_need_setting = _check_partial_fit_first_call(self, classes)
+
+        # If classes not set, set
+        # Above will error if not set and classes = None
+        if classes_need_setting:
+            self.classes_ = np.array(classes)
+            self.n_classes_ = len(classes)
+
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
             t0 = time.time()
-            super().fit(X, y)
+            self.fit(X, y,
+                     pf_call=True)
             t1 = time.time()
 
-            if self.verbose > 0:
+            if self.verbose > 1:
                 print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self.n_estimators_per_chunk} "
                       f"/ {self.max_n_estimators}")
                 print(f"Fit time: {round(t1 - t0, 2)}")
@@ -105,7 +118,8 @@ class Additions:
         else:
             if self.verbose > 0:
                 print('Done')
-            return self
+
+        return self
 
     def _sampled_partial_fit(self,
                              x, y):
@@ -114,6 +128,8 @@ class Additions:
             idx = np.random.randint(0, x.shape[0], self.spf_n_samples)
             self.partial_fit(x[idx, :], y[idx],
                              classes=np.unique(y))
+
+        return self
 
 
 class Overloads:
@@ -130,8 +146,10 @@ class Overloads:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+        return self
+
     def fit(self, *args,
-            classes=None):
+            pf_call=False):
         """
         This fit handles calling either super().fit or partial_fit depending on the caller.
 
@@ -141,16 +159,16 @@ class Overloads:
                      control feeding .partial_fit() with ._sampled_partial_fit().
         """
 
-        if not self.dask:
-
+        if not self.dask_feeding and not pf_call:
             if self.verbose > 0:
-                print('Running spf')
+                print('Feeding with spf')
             self._sampled_partial_fit(*args)
-            return self
 
         else:
+
+            if self.verbose > 0:
+                print('Fitting from a partial_fit call')
             super().fit(*args)
-            return self
 
         return self
 
@@ -216,8 +234,11 @@ class StreamingRFC(Additions, Overloads, RandomForestClassifier):
                  random_state=None,
                  verbose=0,
                  warm_start: bool=True,
-                 dask: bool=True,
-                 max_n_estimators=10) -> None:
+                 dask_feeding: bool=True,
+                 max_n_estimators=10,
+                 spf_on=False,
+                 spf_n_fits=100,
+                 spf_n_samples=100) -> None:
         """
         :param bootstrap:
         :param class_weight:
@@ -270,9 +291,12 @@ class StreamingRFC(Additions, Overloads, RandomForestClassifier):
                         verbose=verbose,
                         warm_start=warm_start,
                         _fit_estimators=0,
-                        dask=dask,
+                        dask_feeding=dask_feeding,
                         max_n_estimators=max_n_estimators,
-                        verb=0)
+                        verb=0,
+                        spf_on=spf_on,
+                        spf_n_fits=spf_n_fits,
+                        spf_n_samples=spf_n_samples)
 
 
 class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
@@ -297,7 +321,7 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
                  verbose=0,
                  warm_start=True,
                  class_weight=None,
-                 dask: bool=True,
+                 dask_feeding: bool=True,
                  spf_on=False,
                  spf_n_fits=100,
                  spf_n_samples=100):
@@ -336,7 +360,7 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
                         spf_on=spf_on,
                         spf_n_fits=spf_n_fits,
                         spf_n_samples=spf_n_samples,
-                        dask=dask)
+                        dask_feeding=dask_feeding)
 
 
 if __name__ == '__main__':
