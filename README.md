@@ -1,6 +1,6 @@
-# Incremental trees v0.2
+# Incremental trees v0.3
 
-Adds partial fit method to sklearn's forest estimators (currently RandomForestClassifier and ExtraTreesClassifier) to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
+Adds partial fit method to sklearn's forest estimators (currently RandomForestClassifier/Regressor and ExtraTreesClassifier/Regressor) to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
 
 These methods don't try and implement partial fitting for decision trees, rather they remove requirement that individual decision trees within forests are trained with the same data (or equally sized bootstraps).
 
@@ -20,7 +20,7 @@ Quick start:
    ````
 3) pip install
    ````bash
-   pip install dist/incremental_trees-0.2.tar
+   pip install dist/incremental_trees-0.3.tar
    ````
 # Usage
 Currently a Streaming version of RandomForestClassifier (StreamingRFC) and ExtraTreesClassifer (StreamingEXT) are implemented in incremental_trees.trees. They works for binary and multiclass classification.
@@ -121,3 +121,15 @@ with LocalCluster(processes=False,
     print(len(srfc.estimators_))
     print(srfc.score(x, y))
 ````
+
+# Version history
+## v.03
+  - Added regressor versions of RandomForest (StreamingRFR) and ExtaTrees (StreamingEXTR, also renamed StreamingEXT to StreamingEXTC).
+  - .fit() overload to handle feefing .partial_fit() with random row samples, without using Dask. Adds compatibility with sklearn SearchCV objects.
+
+## v0.2
+  - Add ExtraTreesClassifier (StreamingEXT)
+
+## v0.1
+  - .partial_fit() for RandomForestClassifier (StreamingRFC)
+  - .predict_proba() for RandomforestClassifier
