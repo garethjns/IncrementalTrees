@@ -1,5 +1,5 @@
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
-from sklearn.tree import ExtraTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, RandomForestRegressor, ExtraTreesRegressor
+from sklearn.tree import ExtraTreeClassifier, ExtraTreeRegressor, DecisionTreeRegressor
 from sklearn.utils.multiclass import unique_labels
 import pandas as pd
 import numpy as np
@@ -53,10 +53,11 @@ def _check_partial_fit_first_call(clf,
     return False
 
 
-class Additions:
+class ForestAdditions:
     def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
                     classes: Union[list, np.ndarray] = None):
         """
+        TODO: Update this docstring
         Fit a single DTC using the given subset of x and y.
 ​
         Passes subset to fit, rather than using the same data each time. Wrap with Dask Incremental to handle subset
@@ -85,17 +86,7 @@ class Additions:
         :return:
         """
 
-        # Set classes for forest (this only needs to be done once).
-        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
-        # Check classes_ is set, or provided
-        # Returns false if nothing to do
-        classes_need_setting = _check_partial_fit_first_call(self, classes)
-
-        # If classes not set, set
-        # Above will error if not set and classes = None
-        if classes_need_setting:
-            self.classes_ = np.array(classes)
-            self.n_classes_ = len(classes)
+        self._check_classes(classes=classes)
 
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
@@ -132,7 +123,27 @@ class Additions:
         return self
 
 
-class Overloads:
+class ClassifierAdditions(ForestAdditions):
+    def _check_classes(self, classes):
+        # Set classes for forest (this only needs to be done once).
+        # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
+        # Check classes_ is set, or provided
+        # Returns false if nothing to do
+        classes_need_setting = _check_partial_fit_first_call(self, classes)
+
+        # If classes not set, set
+        # Above will error if not set and classes = None
+        if classes_need_setting:
+            self.classes_ = np.array(classes)
+            self.n_classes_ = len(classes)
+
+
+class RegressorAdditions(ForestAdditions):
+    def _check_classes(self, **kwargs):
+        pass
+
+
+class ForestOverloads:
     def set_params(self,
                    **kwargs) -> None:
         """
@@ -171,6 +182,9 @@ class Overloads:
             super().fit(*args)
 
         return self
+
+
+class ClassifierOverloads(ForestOverloads):
 
     def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
             """
@@ -213,7 +227,72 @@ class Overloads:
             return norm_prob
 
 
-class StreamingRFC(Additions, Overloads, RandomForestClassifier):
+class RegressorOverloads(ForestOverloads):
+    pass
+
+
+class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor):
+    def __init__(self,
+                 n_estimators='warn',
+                 criterion="mse",
+                 max_depth=None,
+                 min_samples_split=2,
+                 min_samples_leaf=1,
+                 min_weight_fraction_leaf=0.,
+                 max_features="auto",
+                 max_leaf_nodes=None,
+                 min_impurity_decrease=0.,
+                 min_impurity_split=None,
+                 bootstrap=True,
+                 oob_score=False,
+                 n_jobs=None,
+                 random_state=None,
+                 verbose=0,
+                 n_estimators_per_chunk: int=1,
+                 warm_start: bool=True,
+                 dask_feeding: bool=True,
+                 max_n_estimators=10,
+                 spf_on=False,
+                 spf_n_fits=100,
+                 spf_n_samples=100):
+
+        super(RandomForestRegressor, self).__init__(
+            base_estimator=DecisionTreeRegressor(),
+            n_estimators=n_estimators,
+            estimator_params=("criterion", "max_depth", "min_samples_split",
+                              "min_samples_leaf", "min_weight_fraction_leaf",
+                              "max_features", "max_leaf_nodes",
+                              "min_impurity_decrease", "min_impurity_split",
+                              "random_state"),
+            bootstrap=bootstrap,
+            oob_score=oob_score,
+            n_jobs=n_jobs,
+            random_state=random_state,
+            verbose=verbose,
+            warm_start=warm_start)
+
+        self._fit_estimators = 0
+        self.max_n_estimators = max_n_estimators
+        self.n_estimators_per_chunk = n_estimators
+        self.criterion = criterion
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
+        self.max_features = max_features
+        self.max_leaf_nodes = max_leaf_nodes
+        self.min_impurity_decrease = min_impurity_decrease
+        self.min_impurity_split = min_impurity_split
+
+        # Set additional params.
+        self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
+                        spf_on=spf_on,
+                        spf_n_fits=spf_n_fits,
+                        spf_n_samples=spf_n_samples,
+                        dask_feeding=dask_feeding)
+
+
+class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassifier):
     """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
     def __init__(self,
                  bootstrap=True,
@@ -299,8 +378,70 @@ class StreamingRFC(Additions, Overloads, RandomForestClassifier):
                         spf_n_samples=spf_n_samples)
 
 
-class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
-    """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
+class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor):
+    def __init__(self,
+                 n_estimators_per_chunk: int=1,
+                 n_estimators='warn',
+                 max_n_estimators=np.inf,
+                 criterion="mse",
+                 max_depth=None,
+                 min_samples_split=2,
+                 min_samples_leaf=1,
+                 min_weight_fraction_leaf=0.,
+                 max_features="auto",
+                 max_leaf_nodes=None,
+                 min_impurity_decrease=0.,
+                 min_impurity_split=None,
+                 bootstrap=False,
+                 oob_score=False,
+                 n_jobs=None,
+                 random_state=None,
+                 verbose=0,
+                 warm_start=True,
+                 dask_feeding: bool=True,
+                 spf_on: bool=False,
+                 spf_n_fits: int=100,
+                 spf_n_samples: int=100):
+
+        super(ExtraTreesRegressor, self).__init__(
+            base_estimator=ExtraTreeRegressor(),
+            n_estimators=n_estimators,
+            estimator_params=("criterion", "max_depth", "min_samples_split",
+                              "min_samples_leaf", "min_weight_fraction_leaf",
+                              "max_features", "max_leaf_nodes",
+                              "min_impurity_decrease", "min_impurity_split",
+                              "random_state"),
+            bootstrap=bootstrap,
+            oob_score=oob_score,
+            n_jobs=n_jobs,
+            random_state=random_state,
+            verbose=verbose,
+            warm_start=warm_start)
+
+        self._fit_estimators = 0
+        self.max_n_estimators = max_n_estimators
+        self.n_estimators_per_chunk = n_estimators
+        self.criterion = criterion
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
+        self.max_features = max_features
+        self.max_leaf_nodes = max_leaf_nodes
+        self.min_impurity_decrease = min_impurity_decrease
+        self.min_impurity_split = min_impurity_split
+
+        # Set additional params.
+        self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
+                        max_n_estimators=max_n_estimators,
+                        spf_on=spf_on,
+                        spf_n_fits=spf_n_fits,
+                        spf_n_samples=spf_n_samples,
+                        dask_feeding=dask_feeding)
+
+
+class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifier):
+    """Overload sklearn.ensemble.ExtraTreesClassifier to add partial fit method and new params."""
     def __init__(self,
                  n_estimators_per_chunk: int=1,
                  n_estimators: bool=None,
@@ -357,6 +498,7 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
 
         # Set additional params.
         self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
+                        max_n_estimators=max_n_estimators,
                         spf_on=spf_on,
                         spf_n_fits=spf_n_fits,
                         spf_n_samples=spf_n_samples,
@@ -364,15 +506,51 @@ class StreamingEXT(Additions, Overloads, ExtraTreesClassifier):
 
 
 if __name__ == '__main__':
-    from sklearn.datasets import make_blobs
+    from sklearn.datasets import make_blobs, make_regression
 
+    # Fit 10 regressors
     for _ in range(10):
-        x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
-                          centers=2, cluster_std=100)
+        x, y = make_regression(n_samples=int(2e5),
+                               random_state=0,
+                               n_features=40)
+
+        srfr = StreamingRFR(n_estimators_per_chunk=5,
+                            max_n_estimators=100,
+                            verbose=0,
+                            n_jobs=5)
+
+        chunk_size = int(2e3)
+        for i in range(20):
+            sample_idx = np.random.randint(0, x.shape[0], chunk_size)
+            srfr.partial_fit(x[sample_idx], y[sample_idx],
+                             classes=np.unique(y))
+
+        print(f"SRFR: {srfr.score(x, y)}")
+
+        sext = StreamingEXTR(n_estimators_per_chunk=5,
+                             max_n_estimators=100,
+                             verbose=0,
+                             n_jobs=5)
+
+        for i in range(20):
+            sample_idx = np.random.randint(0, x.shape[0], chunk_size)
+            sext.partial_fit(x[sample_idx], y[sample_idx],
+                             classes=np.unique(y))
+
+        print(f"SEXTR: {sext.score(x, y)}")
+
+
+    # Fit 10 classifiers
+    for _ in range(10):
+        x, y = make_blobs(n_samples=int(2e5),
+                          random_state=0,
+                          n_features=40,
+                          centers=2,
+                          cluster_std=100)
 
         srfc = StreamingRFC(n_estimators_per_chunk=5,
                             max_n_estimators=100,
-                            verbose=1,
+                            verbose=0,
                             n_jobs=5)
 
         chunk_size = int(2e3)
@@ -383,15 +561,15 @@ if __name__ == '__main__':
 
         print(f"SRFC: {srfc.score(x, y)}")
 
-        sext = StreamingEXT(n_estimators_per_chunk=5,
-                            max_n_estimators=100,
-                            verbose=1,
-                            n_jobs=5)
+        sext = StreamingEXTC(n_estimators_per_chunk=5,
+                             max_n_estimators=100,
+                             verbose=0,
+                             n_jobs=5)
 
         for i in range(20):
             sample_idx = np.random.randint(0, x.shape[0], chunk_size)
             sext.partial_fit(x[sample_idx], y[sample_idx],
                              classes=np.unique(y))
 
-        print(f"SEXT: {sext.score(x, y)}")
+        print(f"SEXTC: {sext.score(x, y)}")
 
