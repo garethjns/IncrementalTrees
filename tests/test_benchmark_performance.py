@@ -1,7 +1,7 @@
 import unittest
 import math
 import numpy as np
-from incremental_trees.trees import StreamingRFC, StreamingEXT
+from incremental_trees.trees import StreamingRFC, StreamingEXTC
 from sklearn.ensemble.forest import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
@@ -213,7 +213,7 @@ class ExtBenchmark1(PerformanceComparisons, unittest.TestCase):
         cls.srfc_n_partial_fit_calls = 10
 
         cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingEXT(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls.srfc = StreamingEXTC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
 
         cls._fit_benchmarks(cls)
 
@@ -228,7 +228,7 @@ class ExtBenchmark2(PerformanceComparisons, unittest.TestCase):
         cls.srfc_n_partial_fit_calls = 10
 
         cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingEXT(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls.srfc = StreamingEXTC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
 
         cls._fit_benchmarks(cls)
 
@@ -243,6 +243,6 @@ class ExtBenchmark3(PerformanceComparisons, unittest.TestCase):
         cls.srfc_n_partial_fit_calls = 10
 
         cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingEXT(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls.srfc = StreamingEXTC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
 
         cls._fit_benchmarks(cls)

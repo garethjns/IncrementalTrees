@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
-from incremental_trees.trees import StreamingRFC, StreamingEXT
+from incremental_trees.trees import StreamingRFC, StreamingEXTC
 
 
 class Common:
@@ -61,5 +61,5 @@ class TestInconsistentClassesRFC(Common, unittest.TestCase):
 
 class TestInconsistentClassesEXT(Common, unittest.TestCase):
     def setUp(self):
-        self.mod = StreamingEXT(n_estimators_per_chunk=1,
-                                max_n_estimators=np.inf)
+        self.mod = StreamingEXTC(n_estimators_per_chunk=1,
+                                 max_n_estimators=np.inf)

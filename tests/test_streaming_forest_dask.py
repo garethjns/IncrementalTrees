@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.trees import StreamingRFC, StreamingRFR
 from sklearn.datasets import make_blobs
 from dask.distributed import Client, LocalCluster
 import dask_ml
@@ -45,17 +45,23 @@ class Common:
         # Set helper valuez
         cls.samples_per_chunk = int(cls.n_samples / cls.n_chunks)
 
-    def _prep_data(self):
+    def _prep_data(self, reg=False):
         self.n_samples = 1e5
         self.chunk_size = 1e4
         self.n_chunks = np.ceil(self.n_samples / self.chunk_size).astype(int)
 
-        self.x, self.y = dask_ml.datasets.make_blobs(n_samples=self.n_samples,
-                                                     chunks=self.chunk_size,
-                                                     random_state=0,
-                                                     n_features=40,
-                                                     centers=2,
-                                                     cluster_std=100)
+        if reg:
+            self.x, self.y = dask_ml.datasets.make_regression(n_samples=self.n_samples,
+                                                              chunks=self.chunk_size,
+                                                              random_state=0,
+                                                              n_features=40)
+        else:
+            self.x, self.y = dask_ml.datasets.make_blobs(n_samples=self.n_samples,
+                                                         chunks=self.chunk_size,
+                                                         random_state=0,
+                                                         n_features=40,
+                                                         centers=2,
+                                                         cluster_std=100)
 
         return self
 
@@ -94,7 +100,7 @@ class Common:
         pass
 
 
-class TestDaskModel_1(Common, unittest.TestCase):
+class TestDaskRFC_1(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -111,7 +117,7 @@ class TestDaskModel_1(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_2(Common, unittest.TestCase):
+class TestDaskRFC_2(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -128,7 +134,7 @@ class TestDaskModel_2(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_3(Common, unittest.TestCase):
+class TestDaskRFC_3(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -145,12 +151,85 @@ class TestDaskModel_3(Common, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_4(Common, unittest.TestCase):
+class TestDaskRFC_4(Common, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
         cls = cls._prep_data(cls)
         cls.mod = Incremental(StreamingRFC(n_estimators_per_chunk=1,
+                                           n_jobs=-1,
+                                           max_n_estimators=np.inf,
+                                           max_features=cls.x.shape[1],
+                                           verbose=1))
+
+        # Set expected number of estimators
+        cls.expected_n_estimators = 10
+
+        # Set helper values
+        super().setUpClass()
+
+
+class TestDaskRFR_1(Common, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls = cls._prep_data(cls,
+                             reg=True)
+        cls.mod = Incremental(StreamingRFR(n_estimators_per_chunk=1,
+                                           max_n_estimators=39,
+                                           verbose=1))
+
+        # Set expected number of estimators
+        # This should be set manually depending on data.
+        cls.expected_n_estimators = 10
+
+        # Set helper values
+        super().setUpClass()
+
+
+class TestDaskRFR_2(Common, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls = cls._prep_data(cls,
+                             reg=True)
+        cls.mod = Incremental(StreamingRFR(n_estimators_per_chunk=2,
+                                           n_jobs=-1,
+                                           max_n_estimators=np.inf,
+                                           verbose=1))
+
+        # Set expected number of estimators
+        cls.expected_n_estimators = 20
+
+        # Set helper values
+        super().setUpClass()
+
+
+class TestDaskRFR_3(Common, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls = cls._prep_data(cls,
+                             reg=True)
+        cls.mod = Incremental(StreamingRFR(n_estimators_per_chunk=20,
+                                           n_jobs=-1,
+                                           max_n_estimators=np.inf,
+                                           verbose=1))
+
+        # Set expected number of estimators
+        cls.expected_n_estimators = 200
+
+        # Set helper values
+        super().setUpClass()
+
+
+class TestDaskRFR_4(Common, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up model to test."""
+        cls = cls._prep_data(cls,
+                             reg=True)
+        cls.mod = Incremental(StreamingRFR(n_estimators_per_chunk=1,
                                            n_jobs=-1,
                                            max_n_estimators=np.inf,
                                            max_features=cls.x.shape[1],
