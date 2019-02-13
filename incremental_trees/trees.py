@@ -114,6 +114,12 @@ class ForestAdditions:
 
     def _sampled_partial_fit(self,
                              x, y):
+        """
+        This feeds partial_fit with random samples based on the spf_ parameters. Used by .fit() when not using dask.
+        :param x:
+        :param y:
+        :return:
+        """
 
         for _ in range(self.spf_n_fits):
             idx = np.random.randint(0, x.shape[0], self.spf_n_samples)
@@ -139,7 +145,10 @@ class ClassifierAdditions(ForestAdditions):
 
 
 class RegressorAdditions(ForestAdditions):
-    def _check_classes(self, **kwargs):
+    def _check_classes(self, **kwargs) -> None:
+        """
+        Don't need to check classes with the regressor.
+        """
         pass
 
 
@@ -149,7 +158,7 @@ class ForestOverloads:
         """
         Ensure warm_Start is set to true, otherwise set other params as usual.
 
-        :param kwargs:
+        :param kwargs: Params to set.
         """
         # Warm start should be true to get .fit() to keep existing estimators.
         kwargs['warm_start'] = True
@@ -188,7 +197,8 @@ class ClassifierOverloads(ForestOverloads):
 
     def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
             """
-            Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't parallel?
+            Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't
+            parallel?
     ​
             The .predict() method (sklearn.tree.tree.BaseDecisionTree.predict()) sets the output shape using:
                 # Classification
@@ -228,10 +238,14 @@ class ClassifierOverloads(ForestOverloads):
 
 
 class RegressorOverloads(ForestOverloads):
+    """
+    Nothing specific to overload for the Regressors. Predict doesn't need to deal with classes.
+    """
     pass
 
 
 class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor):
+    """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
     def __init__(self,
                  n_estimators='warn',
                  criterion="mse",
@@ -293,7 +307,11 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
 
 
 class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassifier):
-    """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
+    """
+    Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params.
+
+    Note this init is a slightly different structure to ExtraTressClassifier/Regressor and RandomForestRegressor.
+    """
     def __init__(self,
                  bootstrap=True,
                  class_weight=None,
@@ -539,7 +557,6 @@ if __name__ == '__main__':
 
         print(f"SEXTR: {sext.score(x, y)}")
 
-
     # Fit 10 classifiers
     for _ in range(10):
         x, y = make_blobs(n_samples=int(2e5),
@@ -572,4 +589,3 @@ if __name__ == '__main__':
                              classes=np.unique(y))
 
         print(f"SEXTC: {sext.score(x, y)}")
-
