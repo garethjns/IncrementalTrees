@@ -360,8 +360,7 @@ class TestStreamingRFR_1(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=2e5,
-                                                        chunks=1e4,
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -386,7 +385,7 @@ class TestStreamingRFR_2(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=2e5,
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -410,7 +409,7 @@ class TestStreamingRFR_3(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=2e5,
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -435,7 +434,7 @@ class TestStreamingRFR_4(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=2e5,
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -460,7 +459,7 @@ class TestStreamingRFR_5(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=2e5,
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
                                                         random_state=0,
                                                         n_features=40)
 

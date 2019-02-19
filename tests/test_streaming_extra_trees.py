@@ -361,7 +361,7 @@ class TestStreamingEXTR_6(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samplesint(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
                                                         random_state=0,
                                                         n_features=40)
 
