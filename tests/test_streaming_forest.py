@@ -119,7 +119,7 @@ class FitTests:
         self.mod.predict(self.x)
 
     def test_n_estimators(self):
-        self.assertEqual(len(self.mod.estimators_), self.expected_n_estimators)
+        self.assertEqual(self.expected_n_estimators, len(self.mod.estimators_))
 
     def test_grid_search(self):
         """With dask off, try with sklearn GS."""
@@ -516,9 +516,8 @@ class TestStreaming_RFR_7(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_samples=cls.spf_n_samples,
                                spf_n_fits=cls.spf_n_fits)
-
 
         super().setUpClass()
 
@@ -536,9 +535,8 @@ class TestStreaming_RFR_8(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_samples=cls.spf_n_samples,
                                spf_n_fits=cls.spf_n_fits)
-
 
         super().setUpClass()
 
@@ -553,11 +551,11 @@ class TestStreaming_RFR_9(FitTests, unittest.TestCase):
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 6
 
-        cls.mod = StreamingRFR(verbose=1,
+        cls.mod = StreamingRFR(verbose=2,
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_fits,
+                               spf_n_samples=cls.spf_n_samples,
                                spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()

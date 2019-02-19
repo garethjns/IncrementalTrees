@@ -391,7 +391,7 @@ class TestStreamingEXTR_7(FitTests, unittest.TestCase):
                                 n_estimators_per_chunk=cls.n_estimators_per_sample,
                                 max_n_estimators=np.inf,
                                 dask_feeding=cls.dask_feeding,
-                                spf_n_samples=cls.spf_n_fits,
+                                spf_n_samples=cls.spf_n_samples,
                                 spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
@@ -410,7 +410,7 @@ class TestStreamingEXTR_8(FitTests, unittest.TestCase):
                                 n_estimators_per_chunk=cls.n_estimators_per_sample,
                                 max_n_estimators=np.inf,
                                 dask_feeding=cls.dask_feeding,
-                                spf_n_samples=cls.spf_n_fits,
+                                spf_n_samples=cls.spf_n_samples,
                                 spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
@@ -430,7 +430,7 @@ class TestStreamingEXTR_9(FitTests, unittest.TestCase):
                                 n_estimators_per_chunk=cls.n_estimators_per_sample,
                                 max_n_estimators=np.inf,
                                 dask_feeding=cls.dask_feeding,
-                                spf_n_samples=cls.spf_n_fits,
+                                spf_n_samples=cls.spf_n_samples,
                                 spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
