@@ -98,6 +98,7 @@ class ForestAdditions:
             if self.verbose > 1:
                 print(f"Fit estimators {self._fit_estimators} - {self._fit_estimators + self.n_estimators_per_chunk} "
                       f"/ {self.max_n_estimators}")
+                print(f"Model reports {len(self.estimators_)}")
                 print(f"Fit time: {round(t1 - t0, 2)}")
                 print(len(self.estimators_))
             self._fit_estimators += self.n_estimators_per_chunk
@@ -272,7 +273,7 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
 
         super(RandomForestRegressor, self).__init__(
             base_estimator=DecisionTreeRegressor(),
-            n_estimators=n_estimators,
+            n_estimators=n_estimators_per_chunk,
             estimator_params=("criterion", "max_depth", "min_samples_split",
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
@@ -423,7 +424,7 @@ class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor)
 
         super(ExtraTreesRegressor, self).__init__(
             base_estimator=ExtraTreeRegressor(),
-            n_estimators=n_estimators,
+            n_estimators=n_estimators_per_chunk,
             estimator_params=("criterion", "max_depth", "min_samples_split",
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
@@ -525,6 +526,16 @@ class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifi
 
 if __name__ == '__main__':
     from sklearn.datasets import make_blobs, make_regression
+
+    x, y = make_regression(n_samples=int(2e5),
+                           random_state=0,
+                           n_features=40)
+
+    srfr = StreamingRFR(n_estimators_per_chunk=5,
+                        spf_n_fits=10,
+                        spf_on=True,
+                        verbose=0,
+                        n_jobs=2)
 
     # Fit 10 regressors
     for _ in range(10):
