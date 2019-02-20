@@ -3,7 +3,7 @@ import math
 import numpy as np
 from incremental_trees.trees import StreamingRFC, StreamingEXTC
 from sklearn.ensemble.forest import RandomForestClassifier, ExtraTreesClassifier
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_breast_cancer, make_blobs
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.classification import classification_report
@@ -37,11 +37,14 @@ class PerformanceComparisons:
 
         self.log_reg.fit(self.x_train, self.y_train)
         self.rfc.fit(self.x_train, self.y_train)
+        self.rfc_once.fit(self.x_train, self.y_train)
 
         self.log_reg_report, self.log_reg_train_auc, self.log_reg_test_auc = self._mod_report(self,
                                                                                               mod=self.log_reg)
         self.rfc_report, self.rfc_train_auc, self.rfc_test_auc = self._mod_report(self,
                                                                                   mod=self.rfc)
+        self.rfc_once_report, self.rfc_once_train_auc, self.rfc_once_test_auc = self._mod_report(self,
+                                                                                                 mod=self.rfc_once)
 
         return self
 
@@ -54,7 +57,11 @@ class PerformanceComparisons:
         return report, train_auc, test_auc
 
     def _prep_data(self):
-        x, y = load_breast_cancer(return_X_y=True)
+        x, y = make_blobs(n_samples=int(2e5),
+                          random_state=0,
+                          n_features=40,
+                          centers=2,
+                          cluster_std=60)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y,
                                                                                 test_size=0.25,
                                                                                 random_state=123)
@@ -128,34 +135,122 @@ class PerformanceComparisons:
 
         return srfc
 
-    def test_benchmark_sample(self):
+    def test_benchmark_manual_random(self):
         """
-        Compare models where srfc is trained on a number of random samples from the training data.
+        Compare models where srfc is trained on a number of maunal-random samples from the training data.
         """
 
         self.srfc_sam = self._fit_srfc(sequential=False)
         self.srfc_sam_report, self.srfc_sam_train_auc, self.srfc_sam_test_auc = self._mod_report(mod=self.srfc_sam)
 
-        self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.rfc_test_auc,
-                                     rel_tol=0.05))
-        self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.log_reg_test_auc,
-                                     rel_tol=0.05))
+        print("==Manual feeding partial_fit with random samples==")
+        print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
+        print(f"self.rfc score test AUC: {self.rfc_test_auc}")
+        print(f"self.srfc_sam score test AUC: {self.srfc_sam_test_auc}")
+
+        # self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.rfc_test_auc,
+        #                              rel_tol=0.05))
+        # self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.log_reg_test_auc,
+        #                              rel_tol=0.05))
 
         # self._assert_same_n_rows()
 
-    def test_benchmark_sequential(self):
+    def test_benchmark_manual_sequential(self):
         """
-        Compare models where srfc is trained on sequential chunks of the data.
+        Compare models where srfc is trained on sequential chunks of the data once.
         """
         self.srfc_seq = self._fit_srfc(sequential=True)
         self.srfc_seq_report, self.srfc_seq_train_auc, self.srfc_seq_test_auc = self._mod_report(mod=self.srfc_seq)
 
-        self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.rfc_test_auc,
-                                     rel_tol=0.05))
-        self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.log_reg_test_auc,
-                                     rel_tol=0.05))
+        print("==Manual feeding partial_fit with sequential samples==")
+        print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
+        print(f"self.rfc_once score test AUC: {self.rfc_once_test_auc}")
+        print(f"self.srfc score test AUC: {self.srfc_seq_test_auc}")
+
+        # self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.rfc_test_auc,
+        #                              rel_tol=0.05))
+        # self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.log_reg_test_auc,
+        #                              rel_tol=0.05))
 
         # self._assert_same_n_rows()
+
+    def test_benchmark_auto_spf(self):
+        """
+        Fit
+        """
+        self.srfc_spf.fit(self.x_train, self.y_train)
+        self.srfc_spf_report, self.srfc_spf_train_auc, self.srfc_spf_test_auc = self._mod_report(mod=self.srfc_spf)
+
+        print("==Auto feeding partial_fit with random samples==")
+        print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
+        print(f"self.rfc score test AUC: {self.rfc_test_auc}")
+        print(f"self.srfc_spf score test AUC: {self.srfc_spf_test_auc}")
+
+    def test_benchmark_auto_dask(self):
+        pass
+
+    def _generate_comparable_models(self,
+                                    srfc_n_estimators_per_chunk: int,
+                                    srfc_n_partial_fit_calls: int,
+                                    srfc_sample_prop: float,
+                                    n_jobs: int=4):
+        """
+        Set values for streaming models and different set ups. Create two comparable rfcs designed to see
+        equivalent numbers of rows.
+
+        Two RFCs are required to compare to different settings. One should see the equivalent of all the data once,
+        the other should see more. This should cover the following srfc model combinations:
+
+        - "Manual" feeding (using .partial_fit):
+          - Sequential: Will see all the data once (sample size is n / n_partial_fit_calls) per estimator
+          - Random: Will see sample_prop * n * n_partial_fit per estimator
+        - "Auto" feeding
+          - spf: (dask_feeding==False). Will see Will see sample_prop * n * n_partial_fit per estimator.
+          - dask: (dask_feeding=True). Will see all the data once (sample size is n / n_partial_fit_calls)
+                   per estimator (?) Need to verify this.
+
+        :param srfc_n_estimators_per_chunk: Number of estimators per chunk.
+        :param srfc_n_partial_fit_calls: Number of calls to partial fit. Either used manual-sequential or manual-random,
+                                         or supplied to fit to handle. In the case of manual-sequential, the size of the
+                                         sample is set dynamically to split the data into this number of chunks (all
+                                         data is seen once).
+        :param srfc_sample_prop: The proportion of data to sample in when feeding .partial_fit with manual-random or
+                                 by using .fit.
+        :return:
+        """
+        self.srfc_n_estimators_per_chunk = srfc_n_estimators_per_chunk
+        self.srfc_n_partial_fit_calls = srfc_n_partial_fit_calls
+        self.srfc_sample_prop = srfc_sample_prop
+
+        # Number of estimators for RFC
+        # Set so overall it will see an equal number of rows to the srfc using spf
+        self.rfc_n_estimators = int(self.srfc_n_estimators_per_chunk * self.srfc_n_partial_fit_calls
+                                    * self.srfc_sample_prop)
+
+        # Make another that will see the same number of rows as the models that see the data once
+        self.rfc_once_n_estimators = int(self.srfc_n_estimators_per_chunk * self.srfc_n_partial_fit_calls)
+
+        self.rfc = RandomForestClassifier(n_estimators=self.rfc_n_estimators,
+                                          n_jobs=n_jobs)
+
+        self.rfc_once = RandomForestClassifier(n_estimators=self.rfc_once_n_estimators,
+                                               n_jobs=n_jobs)
+
+        # "Manual-sequential" and "manual-random" srfc
+        # Parameters are the same and object is cloned before fitting.
+        self.srfc = StreamingRFC(n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,
+                                 n_jobs=n_jobs)
+
+        # "Auto-spf" srfc
+        self.srfc_spf = StreamingRFC(dask_feeding=False,
+                                     n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,
+                                     spf_n_fits=self.srfc_n_partial_fit_calls,
+                                     spf_n_samples=int(self.srfc_sample_prop * self.x_train.shape[0]),
+                                     n_jobs=n_jobs)
+        # "Auto-dask" srfc
+        self.srfc_dask = StreamingRFC(dask_feeding=True,
+                                      n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,
+                                      n_jobs=n_jobs)
 
 
 class RFCBenchmark1(PerformanceComparisons, unittest.TestCase):
@@ -163,12 +258,10 @@ class RFCBenchmark1(PerformanceComparisons, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.rfc_n_estimators = 10
-        cls.srfc_n_estimators_per_chunk = 1
-        cls.srfc_n_partial_fit_calls = 10
-
-        cls.rfc = RandomForestClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingRFC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls._generate_comparable_models(cls,
+                                        srfc_n_estimators_per_chunk=2,
+                                        srfc_n_partial_fit_calls=20,
+                                        srfc_sample_prop=0.2)
 
         cls._fit_benchmarks(cls)
 
@@ -178,12 +271,10 @@ class RFCBenchmark2(PerformanceComparisons, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.rfc_n_estimators = 100
-        cls.srfc_n_estimators_per_chunk = 10
-        cls.srfc_n_partial_fit_calls = 10
-
-        cls.rfc = RandomForestClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingRFC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls._generate_comparable_models(cls,
+                                        srfc_n_estimators_per_chunk=10,
+                                        srfc_n_partial_fit_calls=10,
+                                        srfc_sample_prop=0.2)
 
         cls._fit_benchmarks(cls)
 
@@ -193,12 +284,10 @@ class RFCBenchmark3(PerformanceComparisons, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.rfc_n_estimators = 100
-        cls.srfc_n_estimators_per_chunk = 1
-        cls.srfc_n_partial_fit_calls = 10
-
-        cls.rfc = RandomForestClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingRFC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls._generate_comparable_models(cls,
+                                        srfc_n_estimators_per_chunk=1,
+                                        srfc_n_partial_fit_calls=10,
+                                        srfc_sample_prop=0.3)
 
         cls._fit_benchmarks(cls)
 
@@ -208,12 +297,10 @@ class ExtBenchmark1(PerformanceComparisons, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.rfc_n_estimators = 10
-        cls.srfc_n_estimators_per_chunk = 1
-        cls.srfc_n_partial_fit_calls = 10
-
-        cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingEXTC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls._generate_comparable_models(cls,
+                                        srfc_n_estimators_per_chunk=2,
+                                        srfc_n_partial_fit_calls=20,
+                                        srfc_sample_prop=0.2)
 
         cls._fit_benchmarks(cls)
 
@@ -223,12 +310,10 @@ class ExtBenchmark2(PerformanceComparisons, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.rfc_n_estimators = 100
-        cls.srfc_n_estimators_per_chunk = 10
-        cls.srfc_n_partial_fit_calls = 10
-
-        cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingEXTC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls._generate_comparable_models(cls,
+                                        srfc_n_estimators_per_chunk=10,
+                                        srfc_n_partial_fit_calls=10,
+                                        srfc_sample_prop=0.2)
 
         cls._fit_benchmarks(cls)
 
@@ -238,11 +323,9 @@ class ExtBenchmark3(PerformanceComparisons, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.rfc_n_estimators = 100
-        cls.srfc_n_estimators_per_chunk = 1
-        cls.srfc_n_partial_fit_calls = 10
-
-        cls.rfc = ExtraTreesClassifier(n_estimators=cls.rfc_n_estimators)
-        cls.srfc = StreamingEXTC(n_estimators_per_chunk=cls.srfc_n_estimators_per_chunk)
+        cls._generate_comparable_models(cls,
+                                        srfc_n_estimators_per_chunk=1,
+                                        srfc_n_partial_fit_calls=10,
+                                        srfc_sample_prop=0.3)
 
         cls._fit_benchmarks(cls)
