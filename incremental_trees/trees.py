@@ -65,10 +65,12 @@ class ForestAdditions:
           - First call needs to be supplied with the expected classes (similar to existing models with .partial_fit())
             in case not all classes are present in the first subset.
 
-
         This object sets classes_ and n_classes_ depending on the supplied classes. The Individual trees set theirs
         depending on the data available in the subset. The predict_proba method is modified to standardise shape to the
         dimensions defined in this object.
+
+        For regressors:
+          - self._check_classes is overloaded with dummy method.
 ​
         :param x:
         :param y:
