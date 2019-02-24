@@ -1,10 +1,13 @@
+# TODO: These tests aren't finished. Need to generalise, add EXTC, regressors, etc.
+
 import unittest
+import warnings
 import math
 import numpy as np
 from incremental_trees.trees import StreamingRFC, StreamingEXTC
 from sklearn.ensemble.forest import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.datasets import load_breast_cancer, make_blobs
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.classification import classification_report
 from sklearn.metrics import roc_auc_score
@@ -12,9 +15,34 @@ from sklearn.base import clone
 from dask.distributed import Client, LocalCluster
 
 
-class PerformanceComparisons:
+class Data:
+    def _prep_data(self):
+        x, y = make_blobs(n_samples=int(2e5),
+                          random_state=0,
+                          n_features=40,
+                          centers=2,
+                          cluster_std=60)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y,
+                                                                                test_size=0.25,
+                                                                                random_state=123)
+
+        return self
+
+    def _mod_report(self, mod):
+
+        report = classification_report(self.y_test, mod.predict(self.x_test))
+        train_auc = roc_auc_score(self.y_train, mod.predict_proba(self.x_train)[:, 1])
+        test_auc = roc_auc_score(self.y_test, mod.predict_proba(self.x_test)[:, 1])
+
+        return report, train_auc, test_auc
+
+
+class PerformanceComparisons(Data):
     """
     Compare srfc to benchmark rfc and logistic regression.
+
+    TODO: Generalise naming, report functions.
+    TODO: Set sensible parameters and add performance assets in child tests.
     """
     @classmethod
     def setUpClass(cls):
@@ -46,26 +74,6 @@ class PerformanceComparisons:
                                                                                   mod=self.rfc)
         self.rfc_once_report, self.rfc_once_train_auc, self.rfc_once_test_auc = self._mod_report(self,
                                                                                                  mod=self.rfc_once)
-
-        return self
-
-    def _mod_report(self, mod):
-
-        report = classification_report(self.y_test, mod.predict(self.x_test))
-        train_auc = roc_auc_score(self.y_train, mod.predict_proba(self.x_train)[:, 1])
-        test_auc = roc_auc_score(self.y_test, mod.predict_proba(self.x_test)[:, 1])
-
-        return report, train_auc, test_auc
-
-    def _prep_data(self):
-        x, y = make_blobs(n_samples=int(2e5),
-                          random_state=0,
-                          n_features=40,
-                          centers=2,
-                          cluster_std=60)
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y,
-                                                                                test_size=0.25,
-                                                                                random_state=123)
 
         return self
 
@@ -347,3 +355,81 @@ class ExtBenchmark3(PerformanceComparisons, unittest.TestCase):
                                         srfc_sample_prop=0.3)
 
         cls._fit_benchmarks(cls)
+
+
+RFCGRID = {'min_samples_leaf': [8, 16, 32, 64],
+           'min_samples_split': [8, 16, 32, 64],
+           'max_features': ['log2', 'sqrt', 0.1, 0.2]}
+SRFCGRID = RFCGRID.copy()
+SRFCGRID.update({'srfc_n_estimators_per_chunk': [1, 2, 4, 8, 12, 16, 20],
+                 'dask_feeding': [False],
+                 'spf_n_fits': [10, 20, 30, 40],
+                 'spf_n_samples': (np.array([0.1, 0.2, 0.3, 0.4]) * 2e5).astype(int)})
+RFCGRID.update({'n_estimators': [100]})
+
+
+class GridBenchmarks:
+    def test_fit_all(self):
+        """
+        Fit grids and compare.
+
+        TODO: Generalise naming.
+        """
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            self.rfc_grid.fit(self.x_train, self.y_train)
+            self.srfc_grid.fit(self.x_train, self.y_train)
+
+        self.rfc_report, self.rfc_train_auc, self.rfc_test_auc = self._mod_report(mod=self.rfc_grid.best_estimator_)
+        self.srfc_report, self.srfc_train_auc, self.srfc_test_auc = self._mod_report(mod=self.srfc_grid.best_estimator_)
+
+        print("==Not-necessarily fair grid comparison==")
+        print(f"self.rfc grid score test AUC: {self.rfc_test_auc}")
+        print(f"self.srfc grid score test AUC: {self.srfc_test_auc}")
+
+
+class RFCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
+    """
+    Check a grid runs, assert performance (not added yet)
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls._prep_data(cls)
+
+        n_iter = 2
+        cls.srfc_grid = RandomizedSearchCV(StreamingRFC(n_jobs=2),
+                                           param_distributions=SRFCGRID,
+                                           n_iter=n_iter * 10,
+                                           verbose=2,
+                                           n_jobs=3)
+
+        cls.rfc_grid = RandomizedSearchCV(RandomForestClassifier(n_jobs=2),
+                                          param_distributions=RFCGRID,
+                                          n_iter=n_iter,
+                                          verbose=2,
+                                          n_jobs=3)
+
+
+class EXTCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
+    """
+    Check a grid runs, assert performance (not added yet)
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls._prep_data(cls)
+
+        n_iter = 2
+        cls.srfc_grid = RandomizedSearchCV(StreamingEXTC(n_jobs=2),
+                                           param_distributions=SRFCGRID,
+                                           n_iter=n_iter * 10,
+                                           verbose=2,
+                                           n_jobs=3)
+
+        cls.rfc_grid = RandomizedSearchCV(ExtraTreesClassifier(n_jobs=2),
+                                          param_distributions=RFCGRID,
+                                          n_iter=n_iter,
+                                          verbose=2,
+                                          n_jobs=3)
