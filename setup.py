@@ -12,4 +12,4 @@ setuptools.setup(name='incremental_trees',
                  # long_description_content_type="text/markdown",
                  packages=setuptools.find_packages(),
                  url="",
-                 install_requires=['pandas', 'dask', 'dask_ml', 'sklearn', 'bokeh'])
+                 install_requires=['distributed', 'pandas', 'dask', 'dask_ml', 'sklearn', 'bokeh'])
