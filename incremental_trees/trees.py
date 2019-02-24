@@ -3,7 +3,7 @@ from sklearn.tree import ExtraTreeClassifier, ExtraTreeRegressor, DecisionTreeRe
 from sklearn.utils.multiclass import unique_labels
 import pandas as pd
 import numpy as np
-from typing import Union
+from typing import Union, List
 import time
 import warnings
 
@@ -57,25 +57,14 @@ class ForestAdditions:
     def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
                     classes: Union[list, np.ndarray] = None):
         """
-        TODO: Update this docstring
         Fit a single DTC using the given subset of x and y.
 ​
-        Passes subset to fit, rather than using the same data each time. Wrap with Dask Incremental to handle subset
-        feeding.
+        This calls .fit, which is overloaded. However flags pf_call=True, so .fit() will handle calling super .fit().
 ​
-        First call needs to be supplied with the expected classes (similar to existing models with .partial_fit())
-        in case not all classes are present in the first subset.
+        For classifiers;
+          - First call needs to be supplied with the expected classes (similar to existing models with .partial_fit())
+            in case not all classes are present in the first subset.
 
-        Additionally, the case where not all classes are presented in the first or subsequent subsets needs to be
-        handled. For the RandomForestClassifier, tree predictions are averaged in
-        sklearn.ensemble.forest.accumulate_prediction unction. This sums the output matrix with dimensions
-        n rows x n classes and fails if the class dimension differs.
-        The class dimension is defined at the individual estimator level during the .fit() call, which sets the
-        following attributes:
-            - self.n_outputs_ = y.shape[1], which is then used by _validate_y_class_weight()), always called in .fit()
-              to set:
-                - self.classes_
-                - self.n_classes_
 
         This object sets classes_ and n_classes_ depending on the supplied classes. The Individual trees set theirs
         depending on the data available in the subset. The predict_proba method is modified to standardise shape to the
@@ -114,11 +103,11 @@ class ForestAdditions:
         return self
 
     def _sampled_partial_fit(self,
-                             x, y):
+                             x: Union[np.array, pd.DataFrame], y: [np.ndarray, pd.Series]):
         """
         This feeds partial_fit with random samples based on the spf_ parameters. Used by .fit() when not using dask.
-        :param x:
-        :param y:
+        :param x: Data.
+        :param y: Labels.
         :return:
         """
 
@@ -131,7 +120,12 @@ class ForestAdditions:
 
 
 class ClassifierAdditions(ForestAdditions):
-    def _check_classes(self, classes):
+    """
+    Additional functions specific to classifiers.
+    """
+    def _check_classes(self, classes: List[int]):
+        """Set classes if they haven't been set yet, otherwise do nothing."""
+
         # Set classes for forest (this only needs to be done once).
         # Not for each individual tree, these will be set by .fit() using the classes available in the subset.
         # Check classes_ is set, or provided
@@ -155,7 +149,7 @@ class RegressorAdditions(ForestAdditions):
 
 class ForestOverloads:
     def set_params(self,
-                   **kwargs) -> None:
+                   **kwargs):
         """
         Ensure warm_Start is set to true, otherwise set other params as usual.
 
@@ -174,10 +168,8 @@ class ForestOverloads:
         """
         This fit handles calling either super().fit or partial_fit depending on the caller.
 
-        :param dask: If true, allow dask to feed partial fit by calling super().fit, which will handle calling
-                     .partial_fit.
-                     If False (for example to use with GridSearch or RandomizedSearchCV) uses 'spf_' params to
-                     control feeding .partial_fit() with ._sampled_partial_fit().
+        :param pf_call: True if called from partial fit, in this case super.fit() is called, instead of getting stuck in
+                        a recursive loop.
         """
 
         if not self.dask_feeding and not pf_call:
@@ -195,47 +187,61 @@ class ForestOverloads:
 
 
 class ClassifierOverloads(ForestOverloads):
+    """
+    Overloaded methods specific to classifiers.
+    """
 
     def predict_proba(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-            """
-            Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't
-            parallel?
+        """
+        Call each predict proba from tree, and accumulate. This handle possibly inconsistent shapes, but isn't
+        parallel?
     ​
-            The .predict() method (sklearn.tree.tree.BaseDecisionTree.predict()) sets the output shape using:
-                # Classification
-                if is_classifier(self):
-                    if self.n_outputs_ == 1:
-                        return self.classes_.take(np.argmax(proba, axis=1), axis=0)
-                    else:
-                       [Not considering this yet]
+        Cases where not all classes are presented in the first or subsequent subsets needs to be
+        handled. For the RandomForestClassifier, tree predictions are averaged in
+        sklearn.ensemble.forest.accumulate_prediction function. This sums the output matrix with dimensions
+        n rows x n classes and fails if the class dimension differs.
+        The class dimension is defined at the individual estimator level during the .fit() call, which sets the
+        following attributes:
+            - self.n_outputs_ = y.shape[1], which is then used by _validate_y_class_weight()), always called in .fit()
+              to set:
+                - self.classes_
+                - self.n_classes_
 
-            :param x:
-            :return:
-            """
-            # Prepare expected output shape
-            preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
-                             dtype=np.float32)
-            counts = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
-                              dtype=np.int16)
+        The .predict() method (sklearn.tree.tree.BaseDecisionTree.predict()) sets the output shape using:
+            # Classification
+            if is_classifier(self):
+                if self.n_outputs_ == 1:
+                    return self.classes_.take(np.argmax(proba, axis=1), axis=0)
+                else:
+                   [Not considering this yet]
 
-            for e in self.estimators_:
-                # Get the prediction from the tree
-                est_preds = e.predict_proba(x)
-                # Get the indexes of the classes present
-                present_classes = e.classes_.astype(int)
-                # Sum these in to the correct array columns
-                preds[:, present_classes] += est_preds
-                counts[:, present_classes] += 1
+        :param x:
+        :return:
+        """
+        # Prepare expected output shape
+        preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+                         dtype=np.float32)
+        counts = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+                          dtype=np.int16)
 
-            # Normalise predictions against counts
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", RuntimeWarning)
-                norm_prob = preds / counts
+        for e in self.estimators_:
+            # Get the prediction from the tree
+            est_preds = e.predict_proba(x)
+            # Get the indexes of the classes present
+            present_classes = e.classes_.astype(int)
+            # Sum these in to the correct array columns
+            preds[:, present_classes] += est_preds
+            counts[:, present_classes] += 1
 
-            # And remove nans (0/0) and infs (n/0)
-            norm_prob[np.isnan(norm_prob) | np.isinf(norm_prob)] = 0
+        # Normalise predictions against counts
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            norm_prob = preds / counts
 
-            return norm_prob
+        # And remove nans (0/0) and infs (n/0)
+        norm_prob[np.isnan(norm_prob) | np.isinf(norm_prob)] = 0
+
+        return norm_prob
 
 
 class RegressorOverloads(ForestOverloads):
