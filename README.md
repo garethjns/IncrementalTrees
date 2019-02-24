@@ -144,7 +144,7 @@ srfc = StreamingRFC(n_estimators_per_chunk=1,
   - Updated unit tests
   - Added performance benchmark tests for classifiers, not finished.
   - Added regressor versions of RandomForest (StreamingRFR) and ExtaTrees (StreamingEXTR, also renamed StreamingEXT to StreamingEXTC).
-  - .fit() overload to handle feefing .partial_fit() with random row samples, without using Dask. Adds compatibility with sklearn SearchCV objects.
+  - .fit() overload to handle feeding .partial_fit() with random row samples, without using Dask. Adds compatibility with sklearn SearchCV objects.
 
 ## v0.2
   - Add ExtraTreesClassifier (StreamingEXT)
