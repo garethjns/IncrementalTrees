@@ -4,7 +4,7 @@ import setuptools
 #     long_description = fh.read()
 
 setuptools.setup(name='incremental_trees',
-                 version="0.1",
+                 version="0.3",
                  author="Gareth Jones",
                  author_email="author@example.com",
                  description='Sklearn forests with partial fits',
