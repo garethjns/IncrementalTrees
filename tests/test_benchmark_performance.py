@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.classification import classification_report
 from sklearn.metrics import roc_auc_score
 from sklearn.base import clone
+from dask.distributed import Client, LocalCluster
 
 
 class PerformanceComparisons:
@@ -135,9 +136,22 @@ class PerformanceComparisons:
 
         return srfc
 
+    def _fit_with_dask(self):
+
+        with LocalCluster(processes=False,
+                          n_workers=2,
+                          threads_per_worker=2,
+                          scheduler_port=8080,
+                          diagnostics_port=8081) as cluster, Client(cluster) as client:
+            self.srfc_dask.fit(self.x_train, self.y_train)
+
+    def _fit_with_spf(self):
+
+        self.srfc_spf.fit(self.x_train, self.y_train)
+
     def test_benchmark_manual_random(self):
         """
-        Compare models where srfc is trained on a number of maunal-random samples from the training data.
+        Compare models where srfc is trained on a number of manual-random samples from the training data.
         """
 
         self.srfc_sam = self._fit_srfc(sequential=False)
@@ -154,6 +168,25 @@ class PerformanceComparisons:
         #                              rel_tol=0.05))
 
         # self._assert_same_n_rows()
+
+    def test_benchmark_auto_spf(self):
+        self._fit_with_spf()
+        self.srfc_spf_report, self.srfc_spf_train_auc, self.srfc_spf_test_auc = self._mod_report(mod=self.srfc_spf)
+
+        print("==Auto feeding partial_fit with spf samples==")
+        print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
+        print(f"self.rfc score test AUC: {self.rfc_test_auc}")
+        print(f"self.srfc_spf score test AUC: {self.srfc_spf_test_auc}")
+
+    def test_benchmark_auto_dask(self):
+        self._fit_with_dask()
+        self.srfc_dask_report, self.srfc_dask_train_auc, self.srfc_dask_test_auc = \
+        self._mod_report(mod=self.srfc_dask)
+
+        print("==Auto feeding partial_fit with dask==")
+        print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
+        print(f"self.rfc_once score test AUC: {self.rfc_once_test_auc}")
+        print(f"self.srfc_dask score test AUC: {self.srfc_dask_test_auc}")
 
     def test_benchmark_manual_sequential(self):
         """
@@ -173,21 +206,6 @@ class PerformanceComparisons:
         #                              rel_tol=0.05))
 
         # self._assert_same_n_rows()
-
-    def test_benchmark_auto_spf(self):
-        """
-        Fit
-        """
-        self.srfc_spf.fit(self.x_train, self.y_train)
-        self.srfc_spf_report, self.srfc_spf_train_auc, self.srfc_spf_test_auc = self._mod_report(mod=self.srfc_spf)
-
-        print("==Auto feeding partial_fit with random samples==")
-        print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
-        print(f"self.rfc score test AUC: {self.rfc_test_auc}")
-        print(f"self.srfc_spf score test AUC: {self.srfc_spf_test_auc}")
-
-    def test_benchmark_auto_dask(self):
-        pass
 
     def _generate_comparable_models(self,
                                     srfc_n_estimators_per_chunk: int,
@@ -243,7 +261,7 @@ class PerformanceComparisons:
 
         # "Auto-spf" srfc
         self.srfc_spf = StreamingRFC(dask_feeding=False,
-                                     n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,
+                                     n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,\
                                      spf_n_fits=self.srfc_n_partial_fit_calls,
                                      spf_n_samples=int(self.srfc_sample_prop * self.x_train.shape[0]),
                                      n_jobs=n_jobs)
