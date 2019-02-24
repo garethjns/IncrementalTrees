@@ -12,15 +12,12 @@ Quick start:
 
 1) Clone repo and build pip installable package.
    ````bash
-   git clone https://github. com/garethjns/IncrementalTrees.git
+   git clone https://github.com/garethjns/IncrementalTrees.git
    python -m pip install --upgrade pip setuptools wheel
    cd IncrementalTrees
-   python3 setup.py sdist
+   pip install .
    ````
-2) pip install
-   ````bash
-   pip install dist/incremental_trees-0.3.tar
-   ````
+
 
 ## Usage Examples
 Currently implement:
