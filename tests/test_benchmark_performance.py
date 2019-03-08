@@ -401,7 +401,7 @@ class RFCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
 
         n_iter = 10
         cls.srfc_grid = RandomizedSearchCV(StreamingRFC(n_jobs=2,
-                                                         verbose=1),
+                                                        verbose=1),
                                            param_distributions=SRFCGRID,
                                            scoring='roc_auc',
                                            n_iter=n_iter * 2,
