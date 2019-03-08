@@ -1,4 +1,4 @@
-# Incremental trees v0.3
+# Incremental trees v0.3.1
 
 Adds partial fit method to sklearn's forest estimators (currently RandomForestClassifier/Regressor and ExtraTreesClassifier/Regressor) to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with or without [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
 
@@ -20,7 +20,7 @@ Quick start:
 
 
 ## Usage Examples
-Currently implement:
+Currently implemented:
  - Streaming versions of RandomForestClassifier (StreamingRFC) and ExtraTreesClassifer (StreamingEXTC). They work should work for binary and multi-class classification, but not multi-output yet.
  - Streaming versions of RandomForestRegressor (StreamingRFR) and ExtraTreesRegressor (StreamingEXTR). 
 
@@ -47,7 +47,7 @@ x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
 srfc = StreamingRFC(n_estimators_per_chunk=3,
                     max_n_estimators=np.inf,
                     spf_n_fits=30,  # Number of calls to .partial_fit()
-                    spf_n_samples=int(0.3 * x.shape[0]))  # Number of rows to sample each on .partial_fit()
+                    spf_sample_prop=0.3)  # Number of rows to sample each on .partial_fit()
 
 srfc.fit(x, y)
 # Should be n_estimators_per_chunk * spf_n_fits

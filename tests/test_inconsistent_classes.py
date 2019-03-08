@@ -4,7 +4,7 @@ import pandas as pd
 from incremental_trees.trees import StreamingRFC, StreamingEXTC
 
 
-class Common:
+class ClassTests:
     @classmethod
     def setUpClass(cls):
         data = pd.DataFrame({'a': (1, 2, 3, 4, 5),
@@ -24,9 +24,15 @@ class Common:
                              classes=np.array([1, 2, 3]))
         self.mod.predict(self.x[0:6])
 
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
+
         # Fit with 3 classes
         self.mod.partial_fit(self.x, self.y)
         self.mod.predict(self.x)
+
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
 
     def test_correct_on_second_call(self):
         # Fit with 2 classes
@@ -34,10 +40,16 @@ class Common:
                              classes=np.array([1, 2, 3]))
         self.mod.predict(self.x[0:6])
 
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
+
         # Fit with 3 classes
         self.mod.partial_fit(self.x, self.y,
                              classes=np.array([1, 2, 3]))
         self.mod.predict(self.x)
+
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
 
     def test_incorrect_on_second_call(self):
         """Incorrect on second call - can happen when dask passes classes."""
@@ -47,19 +59,34 @@ class Common:
                              classes=np.array([1, 2, 3]))
         self.mod.predict(self.x)
 
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
+
         # Fit with 2 classes
         self.mod.partial_fit(self.x[0:6], self.y[0:6],
                              classes=np.array([1, 2]))
         self.mod.predict(self.x[0:6])
 
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
 
-class TestInconsistentClassesRFC(Common, unittest.TestCase):
+        self.mod.partial_fit(self.x[5:7], self.y[5:7],
+                             classes=np.array([2, 3]))
+        self.mod.predict(self.x)
+
+        self.assertEqual(self.mod.n_classes_, 3)
+        self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
+
+
+class TestInconsistentClassesRFC(ClassTests, unittest.TestCase):
     def setUp(self):
         self.mod = StreamingRFC(n_estimators_per_chunk=1,
-                                max_n_estimators=np.inf)
+                                max_n_estimators=np.inf,
+                                verbose=2)
 
 
-class TestInconsistentClassesEXT(Common, unittest.TestCase):
+class TestInconsistentClassesEXT(ClassTests, unittest.TestCase):
     def setUp(self):
         self.mod = StreamingEXTC(n_estimators_per_chunk=1,
-                                 max_n_estimators=np.inf)
+                                 max_n_estimators=np.inf,
+                                 verbose=2)

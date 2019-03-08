@@ -38,7 +38,7 @@ def _check_partial_fit_first_call(clf,
                 # Don't error here:
                 # Instead, use the previous classes setting, which must be correct on first setting
                 warnings.warn(f"Classes differ on this call, ignoring on the assumption first call was correct.")
-                return True
+                return False
                 # raise ValueError(
                 #     "`classes=%r` is not the same as on last call "
                 #     "to partial_fit, was: %r" % (classes, clf.classes_))
@@ -76,6 +76,9 @@ class ForestAdditions:
         :param y:
         :return:
         """
+        if self. verbose > 1:
+            print(f"PF Call with set classes: "
+                  f"{getattr(self, 'classes_', '[no classes attr]')} and input classes {classes}")
 
         self._check_classes(classes=classes)
 
@@ -83,7 +86,8 @@ class ForestAdditions:
         if self._fit_estimators < self.max_n_estimators:
             t0 = time.time()
             self.fit(X, y,
-                     pf_call=True)
+                     pf_call=True,
+                     classes_=getattr(self, 'classes_', None))  # Pass classes for enforcement, if classifier.
             t1 = time.time()
 
             if self.verbose > 1:
@@ -113,8 +117,14 @@ class ForestAdditions:
         :return:
         """
 
+        n_samples = int(self.spf_sample_prop * x.shape[0])
+
         for _ in range(self.spf_n_fits):
-            idx = np.random.randint(0, x.shape[0], self.spf_n_samples)
+            idx = np.random.randint(0, x.shape[0], n_samples)
+
+            if self.verbose > 0:
+                print(f"_sampled_partial_fit size: {idx.shape}")
+
             self.partial_fit(x[idx, :], y[idx],
                              classes=np.unique(y))
 
@@ -166,12 +176,15 @@ class ForestOverloads:
         return self
 
     def fit(self, *args,
-            pf_call=False):
+            pf_call: bool =False,
+            classes_: np.ndarray=None):
         """
         This fit handles calling either super().fit or partial_fit depending on the caller.
 
         :param pf_call: True if called from partial fit, in this case super.fit() is called, instead of getting stuck in
                         a recursive loop.
+        :param classes_: On pf calls, classes is passed from self.classes which will have already been set. These are
+                         re-set after the call to super's fit, which will change them based on observed data.
         """
 
         if not self.dask_feeding and not pf_call:
@@ -184,6 +197,9 @@ class ForestOverloads:
             if self.verbose > 0:
                 print('Fitting from a partial_fit call')
             super().fit(*args)
+            if classes_ is not None:
+                self.classes_ = classes_
+                self.n_classes_ = len(classes_)
 
         return self
 
@@ -221,9 +237,9 @@ class ClassifierOverloads(ForestOverloads):
         :return:
         """
         # Prepare expected output shape
-        preds = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+        preds = np.zeros(shape=(x.shape[0], self.n_classes_),
                          dtype=np.float32)
-        counts = np.zeros(shape=(x.shape[0], self.n_classes_ + 1),
+        counts = np.zeros(shape=(x.shape[0], self.n_classes_),
                           dtype=np.int16)
 
         for e in self.estimators_:
@@ -275,9 +291,8 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
                  warm_start: bool=True,
                  dask_feeding: bool=True,
                  max_n_estimators=10,
-                 spf_on=False,
                  spf_n_fits=100,
-                 spf_n_samples=100):
+                 spf_sample_prop=0.1):
 
         super(RandomForestRegressor, self).__init__(
             base_estimator=DecisionTreeRegressor(),
@@ -309,9 +324,8 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
 
         # Set additional params.
         self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
-                        spf_on=spf_on,
                         spf_n_fits=spf_n_fits,
-                        spf_n_samples=spf_n_samples,
+                        spf_sample_prop =spf_sample_prop,
                         dask_feeding=dask_feeding)
 
 
@@ -342,9 +356,8 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                  warm_start: bool=True,
                  dask_feeding: bool=True,
                  max_n_estimators=10,
-                 spf_on=False,
                  spf_n_fits=100,
-                 spf_n_samples=100) -> None:
+                 spf_sample_prop=0.1) -> None:
         """
         :param bootstrap:
         :param class_weight:
@@ -400,9 +413,8 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                         dask_feeding=dask_feeding,
                         max_n_estimators=max_n_estimators,
                         verb=0,
-                        spf_on=spf_on,
                         spf_n_fits=spf_n_fits,
-                        spf_n_samples=spf_n_samples)
+                        spf_sample_prop=spf_sample_prop)
 
 
 class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor):
@@ -426,9 +438,8 @@ class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor)
                  verbose=0,
                  warm_start=True,
                  dask_feeding: bool=True,
-                 spf_on: bool=False,
                  spf_n_fits: int=100,
-                 spf_n_samples: int=100):
+                 spf_sample_prop: float=0.1):
 
         super(ExtraTreesRegressor, self).__init__(
             base_estimator=ExtraTreeRegressor(),
@@ -461,9 +472,8 @@ class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor)
         # Set additional params.
         self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
                         max_n_estimators=max_n_estimators,
-                        spf_on=spf_on,
                         spf_n_fits=spf_n_fits,
-                        spf_n_samples=spf_n_samples,
+                        spf_sample_prop=spf_sample_prop,
                         dask_feeding=dask_feeding)
 
 
@@ -490,9 +500,8 @@ class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifi
                  warm_start=True,
                  class_weight=None,
                  dask_feeding: bool=True,
-                 spf_on=False,
                  spf_n_fits=100,
-                 spf_n_samples=100):
+                 spf_sample_prop: float=0.1):
 
         super(ExtraTreesClassifier, self).__init__(
             base_estimator=ExtraTreeClassifier(),
@@ -510,6 +519,11 @@ class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifi
             warm_start=warm_start,
             class_weight=class_weight)
 
+        self.max_n_estimators: int = None
+        self._fit_estimators: int = 0
+        self.classes_: np.array = None  # NB: Needs to be array, not list.
+        self.n_classes_: int = None
+
         self._fit_estimators = 0
         self.max_n_estimators = max_n_estimators
         self.n_estimators_per_chunk = n_estimators
@@ -526,9 +540,8 @@ class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifi
         # Set additional params.
         self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
                         max_n_estimators=max_n_estimators,
-                        spf_on=spf_on,
                         spf_n_fits=spf_n_fits,
-                        spf_n_samples=spf_n_samples,
+                        spf_sample_prop=spf_sample_prop,
                         dask_feeding=dask_feeding)
 
 
@@ -541,7 +554,7 @@ if __name__ == '__main__':
 
     srfr = StreamingRFR(n_estimators_per_chunk=5,
                         spf_n_fits=10,
-                        spf_on=True,
+                        dask_feeding=False,
                         verbose=0,
                         n_jobs=2)
 

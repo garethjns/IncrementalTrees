@@ -17,7 +17,7 @@ from dask.distributed import Client, LocalCluster
 
 class Data:
     def _prep_data(self):
-        x, y = make_blobs(n_samples=int(2e5),
+        x, y = make_blobs(n_samples=int(2e4),
                           random_state=0,
                           n_features=40,
                           centers=2,
@@ -271,7 +271,7 @@ class PerformanceComparisons(Data):
         self.srfc_spf = StreamingRFC(dask_feeding=False,
                                      n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,\
                                      spf_n_fits=self.srfc_n_partial_fit_calls,
-                                     spf_n_samples=int(self.srfc_sample_prop * self.x_train.shape[0]),
+                                     spf_sample_prop=self.srfc_sample_prop,
                                      n_jobs=n_jobs)
         # "Auto-dask" srfc
         self.srfc_dask = StreamingRFC(dask_feeding=True,
@@ -364,7 +364,7 @@ SRFCGRID = RFCGRID.copy()
 SRFCGRID.update({'srfc_n_estimators_per_chunk': [1, 2, 4, 8, 12, 16, 20],
                  'dask_feeding': [False],
                  'spf_n_fits': [10, 20, 30, 40],
-                 'spf_n_samples': (np.array([0.1, 0.2, 0.3, 0.4]) * 2e5).astype(int)})
+                 'spf_sample_prop': [0.1, 0.2, 0.3, 0.4]})
 RFCGRID.update({'n_estimators': [100]})
 
 
@@ -387,6 +387,7 @@ class GridBenchmarks:
         print("==Not-necessarily fair grid comparison==")
         print(f"self.rfc grid score test AUC: {self.rfc_test_auc}")
         print(f"self.srfc grid score test AUC: {self.srfc_test_auc}")
+        print(self.srfc_grid.get_params())
 
 
 class RFCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
@@ -398,18 +399,23 @@ class RFCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
     def setUpClass(cls):
         cls._prep_data(cls)
 
-        n_iter = 2
-        cls.srfc_grid = RandomizedSearchCV(StreamingRFC(n_jobs=2),
+        n_iter = 10
+        cls.srfc_grid = RandomizedSearchCV(StreamingRFC(n_jobs=2,
+                                                        verbose=1),
                                            param_distributions=SRFCGRID,
-                                           n_iter=n_iter * 10,
+                                           scoring='roc_auc',
+                                           n_iter=n_iter * 2,
                                            verbose=2,
-                                           n_jobs=3)
+                                           n_jobs=3,
+                                           cv=4)
 
         cls.rfc_grid = RandomizedSearchCV(RandomForestClassifier(n_jobs=2),
                                           param_distributions=RFCGRID,
+                                          scoring='roc_auc',
                                           n_iter=n_iter,
                                           verbose=2,
-                                          n_jobs=3)
+                                          n_jobs=3,
+                                          cv=4)
 
 
 class EXTCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
@@ -421,15 +427,20 @@ class EXTCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
     def setUpClass(cls):
         cls._prep_data(cls)
 
-        n_iter = 2
-        cls.srfc_grid = RandomizedSearchCV(StreamingEXTC(n_jobs=2),
+        n_iter = 20
+        cls.srfc_grid = RandomizedSearchCV(StreamingEXTC(n_jobs=2,
+                                                         verbose=1),
                                            param_distributions=SRFCGRID,
+                                           scoring='roc_auc',
                                            n_iter=n_iter * 10,
                                            verbose=2,
-                                           n_jobs=3)
+                                           n_jobs=3,
+                                           cv=4)
 
         cls.rfc_grid = RandomizedSearchCV(ExtraTreesClassifier(n_jobs=2),
                                           param_distributions=RFCGRID,
+                                          scoring='roc_auc',
                                           n_iter=n_iter,
                                           verbose=2,
-                                          n_jobs=3)
+                                          n_jobs=3,
+                                          cv=4)

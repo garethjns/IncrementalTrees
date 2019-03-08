@@ -8,7 +8,43 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.base import clone
 
 
-class PartialFitTests:
+class PredictTests:
+    def test_predict(self):
+        """
+        Test prediction function runs are returns expected shape, even if all classes are not in prediction set.
+        :return:
+        """
+
+        # Predict on all data
+        preds = self.mod.predict(self.x)
+        self.assertEqual(preds.shape, (self.x.shape[0],))
+
+        # Predict on single row
+        preds = self.mod.predict(self.x[0, :].reshape(1, -1))
+        self.assertEqual(preds.shape, (1,))
+
+    def test_predict_proba(self):
+        """
+        Test prediction function runs are returns expected shape, even if all classes are not in prediction set.
+        :return:
+        """
+        if getattr(self.mod, 'predict_proba', False) is False:
+            # No predict_proba for this model type
+            pass
+        else:
+            # Predict on all data
+            preds = self.mod.predict_proba(self.x)
+            self.assertEqual(preds.shape, (self.x.shape[0], 2))
+
+            # Predict on single row
+            preds = self.mod.predict_proba(self.x[0, :].reshape(1, -1))
+            self.assertEqual(preds.shape, (1, 2))
+
+    def test_score(self):
+        self.mod.score(self.x, self.y)
+
+
+class PartialFitTests(PredictTests):
     """
     Standard tests to run on supplied model and data.
 
@@ -66,24 +102,12 @@ class PartialFitTests:
         # Then check the model matches the validated expectation
         self.assertEqual(len(self.mod.estimators_), self.expected_n_estimators)
 
-    def test_predict(self):
-        """
-        Test prediction function runs are returns expected shape, even if all classes are not in prediction set.
-        :return:
-        """
-
-        # Predict on all data
-        self.mod.predict(self.x)
-
-        # Predict on single row
-        self.mod.predict(self.x[0, :].reshape(1, -1))
-
     def test_result(self):
         """Test performance of model is approximately as expected."""
         pass
 
 
-class FitTests:
+class FitTests(PredictTests):
     """
     Test direct calls to.fit with dask off, which will use ._sampled_partial_fit() to feed partial_fit.
     """
@@ -96,17 +120,18 @@ class FitTests:
         cls.expected_n_estimators = cls.spf_n_fits * cls.n_estimators_per_sample
 
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
                                                    cluster_std=100)
 
         cls.grid = RandomizedSearchCV(clone(cls.mod),
+                                      scoring='roc_auc',
                                       cv=4,
                                       n_iter=10,
                                       verbose=10,
-                                      param_distributions={'spf_n_samples': [100, 200, 300],
+                                      param_distributions={'spf_sample_prop': [0.1, 0.2, 0.3],
                                                            'spf_n_fits': [10, 20, 30]},
                                       n_jobs=-2)
 
@@ -114,16 +139,13 @@ class FitTests:
         """With dask off, call .fit directly."""
         self.mod.fit(self.x, self.y)
 
-    def test_predict(self):
-        """"""
-        self.mod.predict(self.x)
-
     def test_n_estimators(self):
         self.assertEqual(self.expected_n_estimators, len(self.mod.estimators_))
 
     def test_grid_search(self):
         """With dask off, try with sklearn GS."""
         self.grid.fit(self.x, self.y)
+        self.grid.score(self.x, self.y)
 
 
 class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
@@ -136,7 +158,7 @@ class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
@@ -163,7 +185,7 @@ class TestStreamingRFC_2(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
@@ -189,7 +211,7 @@ class TestStreamingRFC_3(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
@@ -216,7 +238,7 @@ class TestStreamingRFC_4(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
@@ -243,7 +265,7 @@ class TestStreamingRFC_5(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
@@ -271,7 +293,7 @@ class TestStreamingRFC_6(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_blobs(n_samples=int(2e4),
                                                    random_state=0,
                                                    n_features=40,
                                                    centers=2,
@@ -295,7 +317,7 @@ class TestStreaming_RFC_7(FitTests, unittest.TestCase):
         """Set up model to test."""
 
         cls.spf_n_fits = 10
-        cls.spf_n_samples = 250
+        cls.spf_sample_prop = 0.1
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 1
 
@@ -303,7 +325,7 @@ class TestStreaming_RFC_7(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_fits,
+                               spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
 
@@ -315,7 +337,7 @@ class TestStreaming_RFC_8(FitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.spf_n_fits = 10
-        cls.spf_n_samples = 250
+        cls.spf_sample_prop = 0.1
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 10
 
@@ -323,7 +345,7 @@ class TestStreaming_RFC_8(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_fits,
+                               spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
 
@@ -336,7 +358,7 @@ class TestStreaming_RFC_9(FitTests, unittest.TestCase):
         """Set up model to test."""
 
         cls.spf_n_fits = 20
-        cls.spf_n_samples = 100
+        cls.spf_sample_prop = 0.1
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 6
 
@@ -344,7 +366,7 @@ class TestStreaming_RFC_9(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_fits,
+                               spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
@@ -360,7 +382,7 @@ class TestStreamingRFR_1(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e4),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -385,7 +407,7 @@ class TestStreamingRFR_2(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e4),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -409,7 +431,7 @@ class TestStreamingRFR_3(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e4),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -434,7 +456,7 @@ class TestStreamingRFR_4(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e4),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -459,7 +481,7 @@ class TestStreamingRFR_5(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e4),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -485,7 +507,7 @@ class TestStreamingRFR_6(PartialFitTests, unittest.TestCase):
     def setUpClass(cls):
         """Set up model to test."""
         cls.n_samples = 1000
-        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e5),
+        cls.x, cls.y = sklearn.datasets.make_regression(n_samples=int(2e4),
                                                         random_state=0,
                                                         n_features=40)
 
@@ -501,13 +523,13 @@ class TestStreamingRFR_6(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreaming_RFR_7(FitTests, unittest.TestCase):
+class TestStreamingRFR_7(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
 
         cls.spf_n_fits = 10
-        cls.spf_n_samples = 250
+        cls.spf_sample_prop = 0.2
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 1
 
@@ -515,18 +537,18 @@ class TestStreaming_RFR_7(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_samples,
+                               spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
 
 
-class TestStreaming_RFR_8(FitTests, unittest.TestCase):
+class TestStreamingRFR_8(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
         cls.spf_n_fits = 10
-        cls.spf_n_samples = 250
+        cls.spf_sample_prop = 0.2
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 10
 
@@ -534,19 +556,19 @@ class TestStreaming_RFR_8(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_samples,
+                               spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
 
 
-class TestStreaming_RFR_9(FitTests, unittest.TestCase):
+class TestStreamingRFR_9(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
 
         cls.spf_n_fits = 20
-        cls.spf_n_samples = 100
+        cls.spf_sample_prop = 0.1
         cls.dask_feeding = False
         cls.n_estimators_per_sample = 6
 
@@ -554,7 +576,7 @@ class TestStreaming_RFR_9(FitTests, unittest.TestCase):
                                n_estimators_per_chunk=cls.n_estimators_per_sample,
                                max_n_estimators=np.inf,
                                dask_feeding=cls.dask_feeding,
-                               spf_n_samples=cls.spf_n_samples,
+                               spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
         super().setUpClass()
