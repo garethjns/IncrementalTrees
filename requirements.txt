@@ -1,8 +1,8 @@
 sklearn
 pandas
-dask==1.1.3
-dask-ml==0.12.0
-distributed
+dask==2.9.0
+dask-ml==1.1.1
+distributed==1.0.1
 bokeh
 pytest
 jupyter

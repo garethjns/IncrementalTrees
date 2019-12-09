@@ -1,11 +1,12 @@
+import time
+import warnings
+from typing import Union, List
+
+import numpy as np
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, RandomForestRegressor, ExtraTreesRegressor
 from sklearn.tree import ExtraTreeClassifier, ExtraTreeRegressor, DecisionTreeRegressor
 from sklearn.utils.multiclass import unique_labels
-import pandas as pd
-import numpy as np
-from typing import Union, List
-import time
-import warnings
 
 
 def _check_partial_fit_first_call(clf,
@@ -76,7 +77,7 @@ class ForestAdditions:
         :param y:
         :return:
         """
-        if self. verbose > 1:
+        if self.verbose > 1:
             print(f"PF Call with set classes: "
                   f"{getattr(self, 'classes_', '[no classes attr]')} and input classes {classes}")
 
@@ -135,6 +136,7 @@ class ClassifierAdditions(ForestAdditions):
     """
     Additional functions specific to classifiers.
     """
+
     def _check_classes(self, classes: List[int]):
         """Set classes if they haven't been set yet, otherwise do nothing."""
 
@@ -176,8 +178,8 @@ class ForestOverloads:
         return self
 
     def fit(self, *args,
-            pf_call: bool =False,
-            classes_: np.ndarray=None):
+            pf_call: bool = False,
+            classes_: np.ndarray = None):
         """
         This fit handles calling either super().fit or partial_fit depending on the caller.
 
@@ -271,6 +273,7 @@ class RegressorOverloads(ForestOverloads):
 
 class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor):
     """Overload sklearn.ensemble.RandomForestClassifier to add partial fit method and new params."""
+
     def __init__(self,
                  n_estimators='warn',
                  criterion="mse",
@@ -287,13 +290,12 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
                  n_jobs=None,
                  random_state=None,
                  verbose=0,
-                 n_estimators_per_chunk: int=1,
-                 warm_start: bool=True,
-                 dask_feeding: bool=True,
+                 n_estimators_per_chunk: int = 1,
+                 warm_start: bool = True,
+                 dask_feeding: bool = True,
                  max_n_estimators=10,
                  spf_n_fits=100,
                  spf_sample_prop=0.1):
-
         super(RandomForestRegressor, self).__init__(
             base_estimator=DecisionTreeRegressor(),
             n_estimators=n_estimators_per_chunk,
@@ -325,7 +327,7 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
         # Set additional params.
         self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
                         spf_n_fits=spf_n_fits,
-                        spf_sample_prop =spf_sample_prop,
+                        spf_sample_prop=spf_sample_prop,
                         dask_feeding=dask_feeding)
 
 
@@ -335,6 +337,7 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
 
     Note this init is a slightly different structure to ExtraTressClassifier/Regressor and RandomForestRegressor.
     """
+
     def __init__(self,
                  bootstrap=True,
                  class_weight=None,
@@ -347,14 +350,14 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                  min_samples_leaf=1,
                  min_samples_split=2,
                  min_weight_fraction_leaf=0.0,
-                 n_estimators_per_chunk: int=1,
-                 n_estimators: bool=None,
+                 n_estimators_per_chunk: int = 1,
+                 n_estimators: bool = None,
                  n_jobs=None,
                  oob_score=False,
                  random_state=None,
                  verbose=0,
-                 warm_start: bool=True,
-                 dask_feeding: bool=True,
+                 warm_start: bool = True,
+                 dask_feeding: bool = True,
                  max_n_estimators=10,
                  spf_n_fits=100,
                  spf_sample_prop=0.1) -> None:
@@ -419,7 +422,7 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
 
 class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor):
     def __init__(self,
-                 n_estimators_per_chunk: int=1,
+                 n_estimators_per_chunk: int = 1,
                  n_estimators='warn',
                  max_n_estimators=np.inf,
                  criterion="mse",
@@ -437,10 +440,9 @@ class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor)
                  random_state=None,
                  verbose=0,
                  warm_start=True,
-                 dask_feeding: bool=True,
-                 spf_n_fits: int=100,
-                 spf_sample_prop: float=0.1):
-
+                 dask_feeding: bool = True,
+                 spf_n_fits: int = 100,
+                 spf_sample_prop: float = 0.1):
         super(ExtraTreesRegressor, self).__init__(
             base_estimator=ExtraTreeRegressor(),
             n_estimators=n_estimators_per_chunk,
@@ -479,9 +481,10 @@ class StreamingEXTR(RegressorAdditions, RegressorOverloads, ExtraTreesRegressor)
 
 class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifier):
     """Overload sklearn.ensemble.ExtraTreesClassifier to add partial fit method and new params."""
+
     def __init__(self,
-                 n_estimators_per_chunk: int=1,
-                 n_estimators: bool=None,
+                 n_estimators_per_chunk: int = 1,
+                 n_estimators: bool = None,
                  max_n_estimators=np.inf,
                  criterion="gini",
                  max_depth=None,
@@ -499,10 +502,9 @@ class StreamingEXTC(ClassifierAdditions, ClassifierOverloads, ExtraTreesClassifi
                  verbose=0,
                  warm_start=True,
                  class_weight=None,
-                 dask_feeding: bool=True,
+                 dask_feeding: bool = True,
                  spf_n_fits=100,
-                 spf_sample_prop: float=0.1):
-
+                 spf_sample_prop: float = 0.1):
         super(ExtraTreesClassifier, self).__init__(
             base_estimator=ExtraTreeClassifier(),
             n_estimators=n_estimators_per_chunk,
