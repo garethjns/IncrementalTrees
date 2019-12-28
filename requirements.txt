@@ -2,10 +2,11 @@ sklearn
 pandas
 dask==2.9.0
 dask-ml==1.1.1
-distributed==1.0.1
+distributed==1.25.0
 bokeh
 pytest
 jupyter
 jupyterlab
 ipykernel
 matplotlib
+fsspec>=0.3.3
