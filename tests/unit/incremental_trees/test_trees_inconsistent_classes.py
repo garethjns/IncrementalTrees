@@ -1,10 +1,12 @@
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from incremental_trees.trees import StreamingRFC, StreamingEXTC
 
 
-class ClassTests:
+class ClassConsistencyTests:
     @classmethod
     def setUpClass(cls):
         data = pd.DataFrame({'a': (1, 2, 3, 4, 5),
@@ -78,14 +80,14 @@ class ClassTests:
         self.assertListEqual(list(self.mod.classes_), [1, 2, 3])
 
 
-class TestInconsistentClassesRFC(ClassTests, unittest.TestCase):
+class TestInconsistentClassesRFC(ClassConsistencyTests, unittest.TestCase):
     def setUp(self):
         self.mod = StreamingRFC(n_estimators_per_chunk=1,
                                 max_n_estimators=np.inf,
                                 verbose=2)
 
 
-class TestInconsistentClassesEXT(ClassTests, unittest.TestCase):
+class TestInconsistentClassesEXT(ClassConsistencyTests, unittest.TestCase):
     def setUp(self):
         self.mod = StreamingEXTC(n_estimators_per_chunk=1,
                                  max_n_estimators=np.inf,

@@ -1,16 +1,16 @@
-from incremental_trees.trees import StreamingRFC
-import dask_ml.datasets
-import dask_ml.cluster
-from dask_ml.wrappers import Incremental
 import dask as dd
-from dask.distributed import Client, LocalCluster
+import dask_ml.cluster
+import dask_ml.datasets
 import numpy as np
+from dask.distributed import Client, LocalCluster
+from dask_ml.wrappers import Incremental
+
+from incremental_trees.trees import StreamingRFC
 
 
 def run_on_blobs():
-
-    x, y = dask_ml.datasets.make_blobs(n_samples=1e7,
-                                       chunks=1e4,
+    x, y = dask_ml.datasets.make_blobs(n_samples=1e8,
+                                       chunks=1e5,
                                        random_state=0,
                                        centers=3)
 
@@ -36,6 +36,5 @@ with LocalCluster(processes=False,
                   threads_per_worker=2,
                   scheduler_port=8080,
                   diagnostics_port=8081) as cluster, Client(cluster) as client:
-
-        print(client)
-        run_on_blobs()
+    print(client)
+    run_on_blobs()
