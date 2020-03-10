@@ -4,7 +4,7 @@ import numpy as np
 from dask_ml.wrappers import Incremental
 
 from incremental_trees.trees import StreamingEXTC, StreamingEXTR, StreamingRFC, StreamingRFR
-from tests.unit.base import DaskTests
+from tests.integration.base import DaskTests
 
 
 class TestDaskModel_1(DaskTests, unittest.TestCase):
@@ -118,13 +118,13 @@ class TestDaskModel_7(DaskTests, unittest.TestCase):
         """Set up model to test."""
         cls = cls._prep_data(cls,
                              reg=True)
-        cls.mod = Incremental(StreamingEXTR(n_estimators_per_chunk=20,
+        cls.mod = Incremental(StreamingEXTR(n_estimators_per_chunk=4,
                                             n_jobs=-1,
                                             max_n_estimators=np.inf,
                                             verbose=1))
 
         # Set expected number of estimators
-        cls.expected_n_estimators = 200
+        cls.expected_n_estimators = 40
 
         # Set helper values
         super().setUpClass()
