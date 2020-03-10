@@ -1,4 +1,5 @@
 import dask_ml
+from dask_ml.datasets import make_blobs, make_regression
 import numpy as np
 import sklearn
 from distributed import LocalCluster, Client
@@ -54,6 +55,7 @@ class PartialFitTests(PredictTests):
 
     These are run without using Dask, so the subset passing to partial_fit is handled manually.
     """
+
     @classmethod
     def setUpClass(cls) -> None:
         """
@@ -109,6 +111,7 @@ class FitTests(PredictTests):
     """
     Test direct calls to.fit with dask off, which will use ._sampled_partial_fit() to feed partial_fit.
     """
+
     @classmethod
     def setUpClass(cls):
         """
@@ -184,22 +187,22 @@ class DaskTests:
         cls.samples_per_chunk = int(cls.n_samples / cls.n_chunks)
 
     def _prep_data(self, reg=False):
-        self.n_samples = 1e5
-        self.chunk_size = 1e4
+        self.n_samples = int(1e5)
+        self.chunk_size = int(1e4)
         self.n_chunks = np.ceil(self.n_samples / self.chunk_size).astype(int)
 
         if reg:
-            self.x, self.y = dask_ml.datasets.make_regression(n_samples=self.n_samples,
-                                                              chunks=self.chunk_size,
-                                                              random_state=0,
-                                                              n_features=40)
+            self.x, self.y = make_regression(n_samples=self.n_samples,
+                                             chunks=self.chunk_size,
+                                             random_state=0,
+                                             n_features=40)
         else:
-            self.x, self.y = dask_ml.datasets.make_blobs(n_samples=self.n_samples,
-                                                         chunks=self.chunk_size,
-                                                         random_state=0,
-                                                         n_features=40,
-                                                         centers=2,
-                                                         cluster_std=100)
+            self.x, self.y = make_blobs(n_samples=self.n_samples,
+                                        chunks=self.chunk_size,
+                                        random_state=0,
+                                        n_features=40,
+                                        centers=2,
+                                        cluster_std=100)
 
         return self
 
@@ -212,7 +215,7 @@ class DaskTests:
     def test_fit(self):
         """Test the supplied model by wrapping with dask Incremental and calling .fit."""
         self.mod.fit(self.x, self.y,
-                     classes=np.unique(self.y))
+                     classes=np.unique(self.y).compute())
 
         # Set expected number of estimators in class set up
         # Check it matches with parameters

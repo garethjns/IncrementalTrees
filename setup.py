@@ -1,9 +1,9 @@
 import setuptools
+
 from incremental_trees import __version__
 
-
 with open("README.md", "r") as fh:
-          long_description = fh.read()
+    long_description = fh.read()
 
 setuptools.setup(name='incremental_trees',
                  version=__version__,
@@ -13,5 +13,9 @@ setuptools.setup(name='incremental_trees',
                  long_description=long_description,
                  long_description_content_type="text/markdown",
                  packages=setuptools.find_packages(),
-                 url="",
-                 install_requires=['distributed', 'pandas', 'dask', 'dask_ml', 'sklearn', 'bokeh'])
+                 url="https://github.com/garethjns/IncrementalTrees",
+                 install_requires=["scikit-learn==0.22.2", "pandas==1.0.1",
+                                   "dask==2.12.0",
+                                   "dask-glm==0.2.0",
+                                   "dask-ml==1.2.0",
+                                   "bokeh"])

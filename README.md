@@ -137,6 +137,8 @@ srfc = StreamingRFC(n_estimators_per_chunk=1,
 ````
 
 # Version history
+## v0.3.1-3
+  - Update Dask versions
 ## v0.3
   - Updated unit tests
   - Added performance benchmark tests for classifiers, not finished.

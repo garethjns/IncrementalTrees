@@ -5,7 +5,7 @@ import sklearn
 import sklearn.datasets
 
 from incremental_trees.trees import StreamingRFC, StreamingRFR, StreamingEXTC, StreamingEXTR
-from tests.unit.base import PartialFitTests, FitTests
+from tests.integration.base import PartialFitTests, FitTests
 
 
 class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
