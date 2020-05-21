@@ -39,7 +39,7 @@ Feeds .partial_fit() with randomly samples rows.
 ````python
 import numpy as np
 from sklearn.datasets import make_blobs
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 # Generate some data in memory
 x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
@@ -65,7 +65,7 @@ import dask_ml.datasets
 from dask_ml.wrappers import Incremental
 from dask.distributed import Client, LocalCluster
 from dask import delayed
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 # Generate some data out-of-core
 x, y = dask_ml.datasets.make_blobs(n_samples=2e5, chunks=1e4, random_state=0,

@@ -3,20 +3,21 @@ import unittest
 import numpy as np
 from distributed import LocalCluster, Client
 from sklearn import clone
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble.forest import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 from incremental_trees.trees import StreamingRFC
-from tests.data import Data
+from tests.common.data_fixture import DataFixture
 
 
-class PerformanceComparisons(Data):
+class PerformanceComparisons(DataFixture):
     """
     Compare srfc to benchmark rfc and logistic regression.
 
     TODO: Generalise naming, report functions.
     TODO: Set sensible parameters and add performance assets in child tests.
     """
+
     @classmethod
     def setUpClass(cls):
         """Prepare comparable models"""
@@ -55,7 +56,6 @@ class PerformanceComparisons(Data):
         Assert that given the training settings, the rfc and srfc will, overall, see the same number of rows of data.
         This is a more direct comparison than len(mod.estimators_) as the individual estimators see much less data in
         the srfc case.
-        :return:
         """
         # Will be available in actual test.
         n_rows = self.x_train.shape[0]
@@ -66,8 +66,8 @@ class PerformanceComparisons(Data):
                           int(n_rows / self.srfc_n_partial_fit_calls)))
 
     def _fit_srfc(self,
-                  sequential: bool=True,
-                  n_prop: float=0.1) -> StreamingRFC:
+                  sequential: bool = True,
+                  n_prop: float = 0.1) -> StreamingRFC:
         """
         Fit the streaming RFC. Total number of rows used in training varies depending on sequential.
 
@@ -100,7 +100,7 @@ class PerformanceComparisons(Data):
             n_sample_rows = int(n_rows / self.srfc_n_partial_fit_calls)
             sidx = 0
             eidx = n_sample_rows
-            for i in range(self.srfc_n_partial_fit_calls):
+            for _ in range(self.srfc_n_partial_fit_calls):
                 idx = np.arange(sidx, eidx)
                 srfc.partial_fit(self.x_train[idx, :], self.y_train[idx],
                                  classes=[0, 1])
@@ -109,7 +109,7 @@ class PerformanceComparisons(Data):
         else:
             # Sample n_prop of data self.srfc_n_partial_fit_calls times
             n_sample_rows = int(n_rows * n_prop)
-            for i in range(self.srfc_n_partial_fit_calls):
+            for _ in range(self.srfc_n_partial_fit_calls):
                 # Sample indexes with replacement
                 idx = np.random.randint(0, n_rows, n_sample_rows)
                 srfc.partial_fit(self.x_train[idx, :], self.y_train[idx],
@@ -143,13 +143,6 @@ class PerformanceComparisons(Data):
         print(f"self.rfc score test AUC: {self.rfc_test_auc}")
         print(f"self.srfc_sam score test AUC: {self.srfc_sam_test_auc}")
 
-        # self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.rfc_test_auc,
-        #                              rel_tol=0.05))
-        # self.assertTrue(math.isclose(self.srfc_sam_test_auc, self.log_reg_test_auc,
-        #                              rel_tol=0.05))
-
-        # self._assert_same_n_rows()
-
     def test_benchmark_auto_spf(self):
         self._fit_with_spf()
         self.srfc_spf_report, self.srfc_spf_train_auc, self.srfc_spf_test_auc = self._mod_report(mod=self.srfc_spf)
@@ -162,7 +155,7 @@ class PerformanceComparisons(Data):
     def test_benchmark_auto_dask(self):
         self._fit_with_dask()
         self.srfc_dask_report, self.srfc_dask_train_auc, self.srfc_dask_test_auc = \
-        self._mod_report(mod=self.srfc_dask)
+            self._mod_report(mod=self.srfc_dask)
 
         print("==Auto feeding partial_fit with dask==")
         print(f"self.log_reg score test AUC: {self.log_reg_test_auc}")
@@ -181,18 +174,11 @@ class PerformanceComparisons(Data):
         print(f"self.rfc_once score test AUC: {self.rfc_once_test_auc}")
         print(f"self.srfc score test AUC: {self.srfc_seq_test_auc}")
 
-        # self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.rfc_test_auc,
-        #                              rel_tol=0.05))
-        # self.assertTrue(math.isclose(self.srfc_seq_test_auc, self.log_reg_test_auc,
-        #                              rel_tol=0.05))
-
-        # self._assert_same_n_rows()
-
     def _generate_comparable_models(self,
                                     srfc_n_estimators_per_chunk: int,
                                     srfc_n_partial_fit_calls: int,
                                     srfc_sample_prop: float,
-                                    n_jobs: int=4):
+                                    n_jobs: int = 4):
         """
         Set values for streaming models and different set ups. Create two comparable rfcs designed to see
         equivalent numbers of rows.
@@ -242,7 +228,7 @@ class PerformanceComparisons(Data):
 
         # "Auto-spf" srfc
         self.srfc_spf = StreamingRFC(dask_feeding=False,
-                                     n_estimators_per_chunk=self.srfc_n_estimators_per_chunk,\
+                                     n_estimators_per_chunk=self.srfc_n_estimators_per_chunk, \
                                      spf_n_fits=self.srfc_n_partial_fit_calls,
                                      spf_sample_prop=self.srfc_sample_prop,
                                      n_jobs=n_jobs)

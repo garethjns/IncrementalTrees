@@ -2,12 +2,14 @@
 
 import unittest
 import warnings
-from incremental_trees.trees import StreamingRFC, StreamingEXTC
+
 from sklearn.ensemble.forest import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.model_selection import RandomizedSearchCV
 
-from tests.data import Data
-from tests.params import RFCGRID, SRFCGRID
+from incremental_trees.models.classification.streaming_extc import StreamingEXTC
+from incremental_trees.trees import StreamingRFC
+from tests.common.data_fixture import DataFixture
+from tests.common.param_fixtures import RFCGRID, SRFCGRID
 
 
 class GridBenchmarks:
@@ -32,7 +34,7 @@ class GridBenchmarks:
         print(self.srfc_grid.get_params())
 
 
-class RFCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
+class RFCBenchmarkGrid(GridBenchmarks, DataFixture, unittest.TestCase):
     """
     Check a grid runs, assert performance (not added yet)
     """
@@ -60,7 +62,7 @@ class RFCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
                                           cv=4)
 
 
-class EXTCBenchmarkGrid(GridBenchmarks, Data, unittest.TestCase):
+class EXTCBenchmarkGrid(GridBenchmarks, DataFixture, unittest.TestCase):
     """
     Check a grid runs, assert performance (not added yet)
     """

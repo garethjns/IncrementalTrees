@@ -4,16 +4,20 @@ import numpy as np
 import sklearn
 import sklearn.datasets
 
-from incremental_trees.trees import StreamingRFC, StreamingRFR, StreamingEXTC, StreamingEXTR
+from incremental_trees.models.classification.streaming_extc import StreamingEXTC
+from incremental_trees.models.regression.streaming_extr import StreamingEXTR
+from incremental_trees.models.regression.streaming_rfr import StreamingRFR
+from incremental_trees.trees import StreamingRFC
 from tests.integration.base import PartialFitTests, FitTests
 
 
-class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
+class TestStreamingRFC1(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
     No limit on the total number of trees.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -35,12 +39,13 @@ class TestStreamingRFC_1(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_2(PartialFitTests, unittest.TestCase):
+class TestStreamingRFC2(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
     Total models limited to 39.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -61,12 +66,13 @@ class TestStreamingRFC_2(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_3(PartialFitTests, unittest.TestCase):
+class TestStreamingRFC3(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
     No limit on total models, 3 estimators per row subset (each with different feature subset)
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -88,12 +94,13 @@ class TestStreamingRFC_3(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_4(PartialFitTests, unittest.TestCase):
+class TestStreamingRFC4(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 1 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -115,12 +122,13 @@ class TestStreamingRFC_4(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_5(PartialFitTests, unittest.TestCase):
+class TestStreamingRFC5(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -143,12 +151,13 @@ class TestStreamingRFC_5(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFC_6(PartialFitTests, unittest.TestCase):
+class TestStreamingRFC6(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -171,7 +180,7 @@ class TestStreamingRFC_6(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreaming_RFC_7(FitTests, unittest.TestCase):
+class TestStreaming_RFC7(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -188,11 +197,10 @@ class TestStreaming_RFC_7(FitTests, unittest.TestCase):
                                spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
-
         super().setUpClass()
 
 
-class TestStreaming_RFC_8(FitTests, unittest.TestCase):
+class TestStreaming_RFC8(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -208,11 +216,10 @@ class TestStreaming_RFC_8(FitTests, unittest.TestCase):
                                spf_sample_prop=cls.spf_sample_prop,
                                spf_n_fits=cls.spf_n_fits)
 
-
         super().setUpClass()
 
 
-class TestStreaming_RFC_9(FitTests, unittest.TestCase):
+class TestStreaming_RFC9(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -232,12 +239,13 @@ class TestStreaming_RFC_9(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_1(PartialFitTests, unittest.TestCase):
+class TestStreamingRFR1(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
     No limit on the total number of trees.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -257,12 +265,13 @@ class TestStreamingRFR_1(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_2(PartialFitTests, unittest.TestCase):
+class TestStreamingRFR2(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "random forest style" max features. ie, subset.
 
     Total models limited to 39.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -281,12 +290,13 @@ class TestStreamingRFR_2(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_3(PartialFitTests, unittest.TestCase):
+class TestStreamingRFR3(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
     No limit on total models, 3 estimators per row subset (each with different feature subset)
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -306,12 +316,13 @@ class TestStreamingRFR_3(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_4(PartialFitTests, unittest.TestCase):
+class TestStreamingRFR4(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 1 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -331,12 +342,13 @@ class TestStreamingRFR_4(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_5(PartialFitTests, unittest.TestCase):
+class TestStreamingRFR5(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -357,12 +369,13 @@ class TestStreamingRFR_5(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_6(PartialFitTests, unittest.TestCase):
+class TestStreamingRFR6(PartialFitTests, unittest.TestCase):
     """
     Test SRFC with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -383,7 +396,7 @@ class TestStreamingRFR_6(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_7(FitTests, unittest.TestCase):
+class TestStreamingRFR7(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -403,7 +416,7 @@ class TestStreamingRFR_7(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_8(FitTests, unittest.TestCase):
+class TestStreamingRFR8(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -422,7 +435,7 @@ class TestStreamingRFR_8(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingRFR_9(FitTests, unittest.TestCase):
+class TestStreamingRFR9(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -442,12 +455,13 @@ class TestStreamingRFR_9(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_1(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTC1(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "random forest style" max features. ie, subset.
 
     No limit on the total number of trees.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -468,12 +482,13 @@ class TestStreamingEXTC_1(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_2(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTC2(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "random forest style" max features. ie, subset.
 
     Total models limited to 39.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -494,12 +509,13 @@ class TestStreamingEXTC_2(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_3(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTC3(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
     No limit on total models, 3 estimators per row subset (each with different feature subset)
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -521,12 +537,13 @@ class TestStreamingEXTC_3(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_4(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTC4(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 1 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -548,12 +565,13 @@ class TestStreamingEXTC_4(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_5(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTC5(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -576,12 +594,13 @@ class TestStreamingEXTC_5(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_6(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTC6(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -604,7 +623,7 @@ class TestStreamingEXTC_6(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_7(FitTests, unittest.TestCase):
+class TestStreamingEXTC7(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -624,7 +643,7 @@ class TestStreamingEXTC_7(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_8(FitTests, unittest.TestCase):
+class TestStreamingEXTC8(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -643,7 +662,7 @@ class TestStreamingEXTC_8(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTC_9(FitTests, unittest.TestCase):
+class TestStreamingEXTC9(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -663,12 +682,13 @@ class TestStreamingEXTC_9(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_1(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTR1(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "random forest style" max features. ie, subset.
 
     No limit on the total number of trees.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -687,12 +707,13 @@ class TestStreamingEXTR_1(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_2(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTR2(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "random forest style" max features. ie, subset.
 
     Total models limited to 39.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -711,12 +732,13 @@ class TestStreamingEXTR_2(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_3(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTR3(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with multiple estimators per chunk with "random forest style" max features. ie, subset.
 
     No limit on total models, 3 estimators per row subset (each with different feature subset)
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -736,12 +758,13 @@ class TestStreamingEXTR_3(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_4(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTR4(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 1 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -761,12 +784,13 @@ class TestStreamingEXTR_4(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_5(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTR5(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -787,12 +811,13 @@ class TestStreamingEXTR_5(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_6(PartialFitTests, unittest.TestCase):
+class TestStreamingEXTR6(PartialFitTests, unittest.TestCase):
     """
     Test SEXT with single estimator per chunk with "decision tree style" max features. ie, all available to each tree.
 
     No limit on total models, 3 estimators per row subset.
     """
+
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -813,7 +838,7 @@ class TestStreamingEXTR_6(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_7(FitTests, unittest.TestCase):
+class TestStreamingEXTR7(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -833,7 +858,7 @@ class TestStreamingEXTR_7(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_8(FitTests, unittest.TestCase):
+class TestStreamingEXTR8(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -852,7 +877,7 @@ class TestStreamingEXTR_8(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreamingEXTR_9(FitTests, unittest.TestCase):
+class TestStreamingEXTR9(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""

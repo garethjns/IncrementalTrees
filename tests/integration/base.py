@@ -1,7 +1,6 @@
-import dask_ml
-from dask_ml.datasets import make_blobs, make_regression
 import numpy as np
 import sklearn
+from dask_ml.datasets import make_blobs, make_regression
 from distributed import LocalCluster, Client
 from sklearn import clone
 from sklearn.model_selection import RandomizedSearchCV
