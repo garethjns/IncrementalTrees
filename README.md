@@ -25,7 +25,7 @@ Currently implemented:
  - Streaming versions of RandomForestClassifier (StreamingRFC) and ExtraTreesClassifer (StreamingEXTC). They work should work for binary and multi-class classification, but not multi-output yet.
  - Streaming versions of RandomForestRegressor (StreamingRFR) and ExtraTreesRegressor (StreamingEXTR). 
 
-See;
+See:
 - Below for example of using different mechanisms to feed .partial_fit() and different paraemeter set ups.  
 - [notes/PerformanceComparisons.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisons.ipynb) and  [notes/PerformanceComparisonsDask.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisonsDask.ipynb) for more examples and performance comparisons against RandomForest. Also there are some (unfinished) performance comparisons in tests/.
 
