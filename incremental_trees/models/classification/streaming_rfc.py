@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
@@ -66,6 +68,8 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
         self.n_classes_: int = None
 
         # n_estimators will be used by RFC to set how many ests are fit on each .fit() call
+        if n_estimators is not None:
+            warnings.warn(f"n_estimators is not None, but value will be ignored and set to n_estimators_per_chunk")
         n_estimators = n_estimators_per_chunk
 
         self.set_params(bootstrap=bootstrap,

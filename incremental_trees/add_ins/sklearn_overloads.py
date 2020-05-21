@@ -35,9 +35,6 @@ def _check_partial_fit_first_call(clf,
                 # Instead, use the previous classes setting, which must be correct on first setting
                 warnings.warn(f"Classes differ on this call, ignoring on the assumption first call was correct.")
                 return False
-                # raise ValueError(
-                #     "`classes=%r` is not the same as on last call "
-                #     "to partial_fit, was: %r" % (classes, clf.classes_))
 
         else:
             # This is the first call to partial_fit

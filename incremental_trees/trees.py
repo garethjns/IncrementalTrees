@@ -45,7 +45,7 @@ def bunch_of_examples():
                              verbose=0,
                              n_jobs=5)
 
-        for i in range(20):
+        for _ in range(20):
             sample_idx = np.random.randint(0, x.shape[0], chunk_size)
             sext.partial_fit(x[sample_idx], y[sample_idx],
                              classes=np.unique(y))
@@ -66,7 +66,7 @@ def bunch_of_examples():
                             n_jobs=5)
 
         chunk_size = int(2e3)
-        for i in range(20):
+        for _ in range(20):
             sample_idx = np.random.randint(0, x.shape[0], chunk_size)
             srfc.partial_fit(x[sample_idx], y[sample_idx],
                              classes=np.unique(y))
@@ -78,7 +78,7 @@ def bunch_of_examples():
                              verbose=0,
                              n_jobs=5)
 
-        for i in range(20):
+        for _ in range(20):
             sample_idx = np.random.randint(0, x.shape[0], chunk_size)
             sext.partial_fit(x[sample_idx], y[sample_idx],
                              classes=np.unique(y))
