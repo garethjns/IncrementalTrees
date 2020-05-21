@@ -180,7 +180,7 @@ class TestStreamingRFC6(PartialFitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreaming_RFC7(FitTests, unittest.TestCase):
+class TestStreamingRFC7(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -200,7 +200,7 @@ class TestStreaming_RFC7(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreaming_RFC8(FitTests, unittest.TestCase):
+class TestStreamingRFC8(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -219,7 +219,7 @@ class TestStreaming_RFC8(FitTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestStreaming_RFC9(FitTests, unittest.TestCase):
+class TestStreamingRFC9(FitTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
