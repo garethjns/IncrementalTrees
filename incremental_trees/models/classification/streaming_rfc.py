@@ -27,7 +27,6 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                  min_samples_split=2,
                  min_weight_fraction_leaf=0.0,
                  n_estimators_per_chunk: int = 1,
-                 n_estimators: bool = None,
                  n_jobs=None,
                  oob_score=False,
                  random_state=None,
@@ -67,11 +66,6 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
         self.classes_: np.array = None  # NB: Needs to be array, not list.
         self.n_classes_: int = None
 
-        # n_estimators will be used by RFC to set how many ests are fit on each .fit() call
-        if n_estimators is not None:
-            warnings.warn(f"n_estimators is not None, but value will be ignored and set to n_estimators_per_chunk")
-        n_estimators = n_estimators_per_chunk
-
         self.set_params(bootstrap=bootstrap,
                         class_weight=class_weight,
                         criterion=criterion,
@@ -84,7 +78,7 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                         min_samples_split=min_samples_split,
                         min_weight_fraction_leaf=min_weight_fraction_leaf,
                         n_estimators_per_chunk=n_estimators_per_chunk,
-                        n_estimators=n_estimators,
+                        n_estimators=n_estimators_per_chunk,
                         n_jobs=n_jobs,
                         oob_score=oob_score,
                         random_state=random_state,
