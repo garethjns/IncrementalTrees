@@ -1,10 +1,10 @@
 from sklearn.datasets import make_blobs
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import train_test_split
 from sklearn.metrics.classification import classification_report
+from sklearn.model_selection import train_test_split
 
 
-class Data:
+class DataFixture:
     def _prep_data(self):
         x, y = make_blobs(n_samples=int(2e4),
                           random_state=0,
@@ -18,7 +18,6 @@ class Data:
         return self
 
     def _mod_report(self, mod):
-
         report = classification_report(self.y_test, mod.predict(self.x_test))
         train_auc = roc_auc_score(self.y_train, mod.predict_proba(self.x_train)[:, 1])
         test_auc = roc_auc_score(self.y_test, mod.predict_proba(self.x_test)[:, 1])

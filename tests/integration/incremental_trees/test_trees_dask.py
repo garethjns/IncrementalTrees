@@ -3,11 +3,14 @@ import unittest
 import numpy as np
 from dask_ml.wrappers import Incremental
 
-from incremental_trees.trees import StreamingEXTC, StreamingEXTR, StreamingRFC, StreamingRFR
+from incremental_trees.models.classification.streaming_extc import StreamingEXTC
+from incremental_trees.models.regression.streaming_extr import StreamingEXTR
+from incremental_trees.models.regression.streaming_rfr import StreamingRFR
+from incremental_trees.trees import StreamingRFC
 from tests.integration.base import DaskTests
 
 
-class TestDaskModel_1(DaskTests, unittest.TestCase):
+class TestDaskModel1(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -24,7 +27,7 @@ class TestDaskModel_1(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_2(DaskTests, unittest.TestCase):
+class TestDaskModel2(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -41,7 +44,7 @@ class TestDaskModel_2(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_3(DaskTests, unittest.TestCase):
+class TestDaskModel3(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -58,7 +61,7 @@ class TestDaskModel_3(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_4(DaskTests, unittest.TestCase):
+class TestDaskModel4(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -76,7 +79,7 @@ class TestDaskModel_4(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_5(DaskTests, unittest.TestCase):
+class TestDaskModel5(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -94,7 +97,7 @@ class TestDaskModel_5(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_6(DaskTests, unittest.TestCase):
+class TestDaskModel6(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -112,7 +115,7 @@ class TestDaskModel_6(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_7(DaskTests, unittest.TestCase):
+class TestDaskModel7(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -130,7 +133,7 @@ class TestDaskModel_7(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskModel_8(DaskTests, unittest.TestCase):
+class TestDaskModel8(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -149,7 +152,7 @@ class TestDaskModel_8(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFC_1(DaskTests, unittest.TestCase):
+class TestDaskRFC1(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -166,7 +169,7 @@ class TestDaskRFC_1(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFC_2(DaskTests, unittest.TestCase):
+class TestDaskRFC2(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -183,7 +186,7 @@ class TestDaskRFC_2(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFC_3(DaskTests, unittest.TestCase):
+class TestDaskRFC3(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -200,7 +203,7 @@ class TestDaskRFC_3(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFC_4(DaskTests, unittest.TestCase):
+class TestDaskRFC4(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -218,7 +221,7 @@ class TestDaskRFC_4(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFR_1(DaskTests, unittest.TestCase):
+class TestDaskRFR1(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -236,7 +239,7 @@ class TestDaskRFR_1(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFR_2(DaskTests, unittest.TestCase):
+class TestDaskRFR2(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -254,7 +257,7 @@ class TestDaskRFR_2(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFR_3(DaskTests, unittest.TestCase):
+class TestDaskRFR3(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""
@@ -272,7 +275,7 @@ class TestDaskRFR_3(DaskTests, unittest.TestCase):
         super().setUpClass()
 
 
-class TestDaskRFR_4(DaskTests, unittest.TestCase):
+class TestDaskRFR4(DaskTests, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up model to test."""

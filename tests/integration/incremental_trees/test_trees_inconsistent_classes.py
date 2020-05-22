@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from incremental_trees.trees import StreamingRFC, StreamingEXTC
+from incremental_trees.models.classification.streaming_extc import StreamingEXTC
+from incremental_trees.trees import StreamingRFC
 
 
 class ClassConsistencyTests:

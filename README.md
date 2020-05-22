@@ -1,4 +1,4 @@
-# Incremental trees v0.3.3
+# Incremental trees v0.4.0
 ![The overcomplicated tests are...](https://github.com/garethjns/IncrementalTrees/workflows/The%20overcomplicated%20tests%20are.../badge.svg)
 
 Adds partial fit method to sklearn's forest estimators (currently RandomForestClassifier/Regressor and ExtraTreesClassifier/Regressor) to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with or without [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
@@ -13,10 +13,7 @@ Quick start:
 
 1) Clone repo and build pip installable package.
    ````bash
-   git clone https://github.com/garethjns/IncrementalTrees.git
-   python -m pip install --upgrade pip setuptools wheel
-   cd IncrementalTrees
-   pip install .
+    pip install incremental_trees
    ````
 
 
@@ -39,7 +36,7 @@ Feeds .partial_fit() with randomly samples rows.
 ````python
 import numpy as np
 from sklearn.datasets import make_blobs
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 # Generate some data in memory
 x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
@@ -65,7 +62,7 @@ import dask_ml.datasets
 from dask_ml.wrappers import Incremental
 from dask.distributed import Client, LocalCluster
 from dask import delayed
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 # Generate some data out-of-core
 x, y = dask_ml.datasets.make_blobs(n_samples=2e5, chunks=1e4, random_state=0,
@@ -138,6 +135,8 @@ srfc = StreamingRFC(n_estimators_per_chunk=1,
 ````
 
 # Version history
+## v0.4
+ - Refactor and tidy, try with new versions of Dask/sklearn
 ## v0.3.1-3
   - Update Dask versions
 ## v0.3
