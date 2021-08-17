@@ -47,7 +47,9 @@ srfc = StreamingRFC(n_estimators_per_chunk=3,
                     spf_n_fits=30,  # Number of calls to .partial_fit()
                     spf_sample_prop=0.3)  # Number of rows to sample each on .partial_fit()
 
-srfc.fit(x, y)
+srfc.fit(x, y, 
+         sample_weight=np.ones_like(y))  # Optional, gets sampled along with the data
+
 # Should be n_estimators_per_chunk * spf_n_fits
 print(len(srfc.estimators_))
 print(srfc.score(x, y))
@@ -135,8 +137,10 @@ srfc = StreamingRFC(n_estimators_per_chunk=1,
 ````
 
 # Version history
+## v0.5.1
+ - Add support for passing fit args/kwargs via `.fit` (specifically, `sample_weight`)
 ## v0.5.0
- - Add support for passing fit args/kwargs via partial fit (specifically, `sample_weight`)
+ - Add support for passing fit args/kwargs via `.partial fit` (specifically, `sample_weight`)
 ## v0.4.0
  - Refactor and tidy, try with new versions of Dask/sklearn
 ## v0.3.1-3
