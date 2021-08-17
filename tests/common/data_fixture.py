@@ -1,6 +1,6 @@
 from sklearn.datasets import make_blobs
 from sklearn.metrics import roc_auc_score
-from sklearn.metrics.classification import classification_report
+from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
 
