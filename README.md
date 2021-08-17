@@ -1,4 +1,4 @@
-# Incremental trees v0.4.0
+# Incremental trees
 ![The overcomplicated tests are...](https://github.com/garethjns/IncrementalTrees/workflows/The%20overcomplicated%20tests%20are.../badge.svg)
 
 Adds partial fit method to sklearn's forest estimators (currently RandomForestClassifier/Regressor and ExtraTreesClassifier/Regressor) to allow [incremental training](https://scikit-learn.org/0.15/modules/scaling_strategies.html) without being limited to a linear model. Works with or without [Dask-ml's Incremental](http://ml.dask.org/incremental.html).
