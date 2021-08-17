@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from distributed import LocalCluster, Client
 from sklearn import clone
-from sklearn.ensemble.forest import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 from incremental_trees.trees import StreamingRFC

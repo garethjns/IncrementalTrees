@@ -6,8 +6,8 @@ import pandas as pd
 
 
 class ForestAdditions:
-    def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series],
-                    classes: Union[list, np.ndarray] = None):
+    def partial_fit(self, X: Union[np.array, pd.DataFrame], y: Union[np.array, pd.Series], *args,
+                    classes: Union[list, np.ndarray] = None, **kwargs):
         """
         Fit a single DTC using the given subset of x and y.
 ​
@@ -37,9 +37,9 @@ class ForestAdditions:
         # Fit the next estimator, if not done
         if self._fit_estimators < self.max_n_estimators:
             t0 = time.time()
-            self.fit(X, y,
+            self.fit(X, y, *args,
                      pf_call=True,
-                     classes_=getattr(self, 'classes_', None))  # Pass classes for enforcement, if classifier.
+                     classes_=getattr(self, 'classes_', None), **kwargs)  # Pass classes for enforcement, if classifier.
             t1 = time.time()
 
             if self.verbose > 1:
@@ -61,7 +61,7 @@ class ForestAdditions:
         return self
 
     def _sampled_partial_fit(self,
-                             x: Union[np.array, pd.DataFrame], y: [np.ndarray, pd.Series]):
+                             x: Union[np.array, pd.DataFrame], y: [np.ndarray, pd.Series], *args, **kwargs):
         """
         This feeds partial_fit with random samples based on the spf_ parameters. Used by .fit() when not using dask.
         :param x: Data.
@@ -77,7 +77,7 @@ class ForestAdditions:
             if self.verbose > 0:
                 print(f"_sampled_partial_fit size: {idx.shape}")
 
-            self.partial_fit(x[idx, :], y[idx],
-                             classes=np.unique(y))
+            self.partial_fit(x[idx, :], y[idx], *args,
+                             classes=np.unique(y), **kwargs)
 
         return self

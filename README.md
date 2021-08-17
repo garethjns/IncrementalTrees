@@ -23,7 +23,7 @@ Currently implemented:
  - Streaming versions of RandomForestRegressor (StreamingRFR) and ExtraTreesRegressor (StreamingEXTR). 
 
 See:
-- Below for example of using different mechanisms to feed .partial_fit() and different paraemeter set ups.  
+- Below for example of using different mechanisms to feed .partial_fit() and different parameter set ups.  
 - [notes/PerformanceComparisons.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisons.ipynb) and  [notes/PerformanceComparisonsDask.ipynb](https://github.com/garethjns/IncrementalTrees/blob/master/notes/PerformanceComparisonsDask.ipynb) for more examples and performance comparisons against RandomForest. Also there are some (unfinished) performance comparisons in tests/.
 
 
@@ -109,7 +109,7 @@ n_chunks = 30
 chunk_size = int(2e3)
 for i in range(n_chunks):
     sample_idx = np.random.randint(0, x.shape[0], chunk_size)
-    # Call .partial_fit(), specifying expected classes
+    # Call .partial_fit(), specifying expected classes, also supports other .fit args such as sample_weight
     srfc.partial_fit(x[sample_idx, :], y[sample_idx],
                      classes=np.unique(y))
            
@@ -135,20 +135,20 @@ srfc = StreamingRFC(n_estimators_per_chunk=1,
 ````
 
 # Version history
-## v0.4
+## v0.5.0
+ - Add support for passing fit args/kwargs via partial fit (specifically, `sample_weight`)
+## v0.4.0
  - Refactor and tidy, try with new versions of Dask/sklearn
 ## v0.3.1-3
   - Update Dask versions
-## v0.3
+## v0.3.0
   - Updated unit tests
   - Added performance benchmark tests for classifiers, not finished.
   - Added regressor versions of RandomForest (StreamingRFR) and ExtaTrees (StreamingEXTR, also renamed StreamingEXT to StreamingEXTC).
   - .fit() overload to handle feeding .partial_fit() with random row samples, without using Dask. Adds compatibility with sklearn SearchCV objects.
-
-## v0.2
+## v0.2.0
   - Add ExtraTreesClassifier (StreamingEXT)
-
-## v0.1
+## v0.1.0
   - .partial_fit() for RandomForestClassifier (StreamingRFC)
   - .predict_proba() for RandomforestClassifier
   

@@ -3,7 +3,7 @@
 import unittest
 import warnings
 
-from sklearn.ensemble.forest import RandomForestClassifier, ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.model_selection import RandomizedSearchCV
 
 from incremental_trees.models.classification.streaming_extc import StreamingEXTC
