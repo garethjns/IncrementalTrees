@@ -19,7 +19,8 @@ class ForestOverloads:
 
     def fit(self, *args,
             pf_call: bool = False,
-            classes_: np.ndarray = None):
+            classes_: np.ndarray = None,
+            **kwargs):
         """
         This fit handles calling either super().fit or partial_fit depending on the caller.
 
@@ -32,13 +33,13 @@ class ForestOverloads:
         if not self.dask_feeding and not pf_call:
             if self.verbose > 0:
                 print('Feeding with spf')
-            self._sampled_partial_fit(*args)
+            self._sampled_partial_fit(*args, **kwargs)
 
         else:
 
             if self.verbose > 0:
                 print('Fitting from a partial_fit call')
-            super().fit(*args)
+            super().fit(*args, **kwargs)
             if classes_ is not None:
                 self.classes_ = classes_
                 self.n_classes_ = len(classes_)

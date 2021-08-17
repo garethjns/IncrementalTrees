@@ -1,4 +1,4 @@
-scikit-learn==0.22
+scikit-learn>=0.22
 pandas
 numpy
 dask>=2
