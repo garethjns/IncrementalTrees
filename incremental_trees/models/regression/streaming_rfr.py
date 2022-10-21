@@ -10,15 +10,15 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
 
     def __init__(self,
                  n_estimators='warn',
-                 criterion="mse",
+                 criterion='squared_error', # deprecated, use `criterion='squared_error' instead
                  max_depth=None,
                  min_samples_split=2,
                  min_samples_leaf=1,
                  min_weight_fraction_leaf=0.,
-                 max_features="auto",
+                 max_features=1.0, # deprecated, use max feature max_features=1.0 instead
                  max_leaf_nodes=None,
                  min_impurity_decrease=0.,
-                 min_impurity_split=None,
+                # min_impurity_split=None, # That paramerter does not excist anymore in sklearn > 1.x.x
                  bootstrap=True,
                  oob_score=False,
                  n_jobs=None,
@@ -36,7 +36,7 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
             estimator_params=("criterion", "max_depth", "min_samples_split",
                               "min_samples_leaf", "min_weight_fraction_leaf",
                               "max_features", "max_leaf_nodes",
-                              "min_impurity_decrease", "min_impurity_split",
+                              "min_impurity_decrease",
                               "random_state"),
             bootstrap=bootstrap,
             oob_score=oob_score,
@@ -56,7 +56,7 @@ class StreamingRFR(RegressorAdditions, RegressorOverloads, RandomForestRegressor
         self.max_features = max_features
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
-        self.min_impurity_split = min_impurity_split
+      #  self.min_impurity_split = min_impurity_split
 
         # Set additional params.
         self.set_params(n_estimators_per_chunk=n_estimators_per_chunk,
