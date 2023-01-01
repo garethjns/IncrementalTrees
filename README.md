@@ -39,16 +39,14 @@ from sklearn.datasets import make_blobs
 from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 # Generate some data in memory
-x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
-                  centers=2, cluster_std=100)
+x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40, centers=2, cluster_std=100)
 
 srfc = StreamingRFC(n_estimators_per_chunk=3,
                     max_n_estimators=np.inf,
                     spf_n_fits=30,  # Number of calls to .partial_fit()
                     spf_sample_prop=0.3)  # Number of rows to sample each on .partial_fit()
 
-srfc.fit(x, y, 
-         sample_weight=np.ones_like(y))  # Optional, gets sampled along with the data
+srfc.fit(x, y, sample_weight=np.ones_like(y))  # Optional, gets sampled along with the data
 
 # Should be n_estimators_per_chunk * spf_n_fits
 print(len(srfc.estimators_))
@@ -96,7 +94,7 @@ For example, this can be used to feed .partial_fit() sequentially (although belo
 ````python
 import numpy as np
 from sklearn.datasets import make_blobs
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 srfc = StreamingRFC(n_estimators_per_chunk=20,
                     max_n_estimators=np.inf,
@@ -110,11 +108,11 @@ x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
 n_chunks = 30
 chunk_size = int(2e3)
 for i in range(n_chunks):
-    sample_idx = np.random.randint(0, x.shape[0], chunk_size)
-    # Call .partial_fit(), specifying expected classes, also supports other .fit args such as sample_weight
-    srfc.partial_fit(x[sample_idx, :], y[sample_idx],
-                     classes=np.unique(y))
-           
+   sample_idx = np.random.randint(0, x.shape[0], chunk_size)
+   # Call .partial_fit(), specifying expected classes, also supports other .fit args such as sample_weight
+   srfc.partial_fit(x[sample_idx, :], y[sample_idx],
+                    classes=np.unique(y))
+
 # Should be n_chunks * n_estimators_per_chunk             
 print(len(srfc.estimators_))
 print(srfc.score(x, y))
@@ -126,17 +124,17 @@ There are a couple of different model setups worth considering. No idea which wo
 #### "Incremental forest"
 For the number of chunks/fits, sample rows from X, then fit a number of single trees (with different column subsets), eg.
 ````python
-srfc = StreamingRFC(n_estimators_per_chunk=10,
-                    max_features='sqrt')    
+srfc = StreamingRFC(n_estimators_per_chunk=10, max_features='sqrt')    
 ````
 #### "Incremental decision trees"
 Single (or few) decision trees per data subset, with all features. 
 ````python
-srfc = StreamingRFC(n_estimators_per_chunk=1,
-                    max_features=x.shape[1])
+srfc = StreamingRFC(n_estimators_per_chunk=1, max_features=x.shape[1])
 ````
 
 # Version history
+## v0.6.0
+ - Update to work with scikit-learn==1.2, dask==2022.12, dask-glm==0.2.0, dask-ml==2022.5.27
 ## v0.5.1
  - Add support for passing fit args/kwargs via `.fit` (specifically, `sample_weight`)
 ## v0.5.0

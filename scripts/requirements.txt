@@ -1,0 +1,6 @@
+ipykernel
+matplotlib
+jupyter
+jupyterlab
+pandas
+bokeh<3
