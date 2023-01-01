@@ -6,7 +6,7 @@ from sklearn import clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-from incremental_trees.trees import StreamingRFC
+from scripts.trees import StreamingRFC
 from tests.common.data_fixture import DataFixture
 
 
@@ -42,12 +42,12 @@ class PerformanceComparisons(DataFixture):
         self.rfc.fit(self.x_train, self.y_train)
         self.rfc_once.fit(self.x_train, self.y_train)
 
-        self.log_reg_report, self.log_reg_train_auc, self.log_reg_test_auc = self._mod_report(self,
-                                                                                              mod=self.log_reg)
-        self.rfc_report, self.rfc_train_auc, self.rfc_test_auc = self._mod_report(self,
-                                                                                  mod=self.rfc)
-        self.rfc_once_report, self.rfc_once_train_auc, self.rfc_once_test_auc = self._mod_report(self,
-                                                                                                 mod=self.rfc_once)
+        self.log_reg_report, self.log_reg_train_auc, self.log_reg_test_auc = self._mod_report(self, mod=self.log_reg)
+        self.rfc_report, self.rfc_train_auc, self.rfc_test_auc = self._mod_report(self, mod=self.rfc)
+        self.rfc_once_report, self.rfc_once_train_auc, self.rfc_once_test_auc = self._mod_report(
+            self,
+            mod=self.rfc_once
+        )
 
         return self
 
@@ -60,10 +60,12 @@ class PerformanceComparisons(DataFixture):
         # Will be available in actual test.
         n_rows = self.x_train.shape[0]
 
-        self.assertEqual(self.rfc_n_estimators * n_rows,
-                         (self.srfc_n_estimators_per_chunk *
-                          self.srfc_n_partial_fit_calls *
-                          int(n_rows / self.srfc_n_partial_fit_calls)))
+        self.assertEqual(
+            self.rfc_n_estimators * n_rows,
+            (self.srfc_n_estimators_per_chunk *
+             self.srfc_n_partial_fit_calls *
+             int(n_rows / self.srfc_n_partial_fit_calls))
+        )
 
     def _fit_srfc(self,
                   sequential: bool = True,
