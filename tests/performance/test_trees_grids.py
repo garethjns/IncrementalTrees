@@ -3,11 +3,11 @@
 import unittest
 import warnings
 
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.model_selection import RandomizedSearchCV
 
 from incremental_trees.models.classification.streaming_extc import StreamingEXTC
-from scripts.trees import StreamingRFC
 from tests.common.data_fixture import DataFixture
 from tests.common.param_fixtures import RFCGRID, SRFCGRID
 

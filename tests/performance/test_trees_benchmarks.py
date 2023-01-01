@@ -2,11 +2,11 @@ import unittest
 
 import numpy as np
 from distributed import LocalCluster, Client
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 from sklearn import clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-from scripts.trees import StreamingRFC
 from tests.common.data_fixture import DataFixture
 
 
@@ -67,9 +67,7 @@ class PerformanceComparisons(DataFixture):
              int(n_rows / self.srfc_n_partial_fit_calls))
         )
 
-    def _fit_srfc(self,
-                  sequential: bool = True,
-                  n_prop: float = 0.1) -> StreamingRFC:
+    def _fit_srfc(self, sequential: bool = True, n_prop: float = 0.1) -> StreamingRFC:
         """
         Fit the streaming RFC. Total number of rows used in training varies depending on sequential.
 
