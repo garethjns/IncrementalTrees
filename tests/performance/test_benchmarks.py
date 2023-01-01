@@ -123,7 +123,7 @@ class PerformanceComparisons(DataFixture):
                           n_workers=2,
                           threads_per_worker=2,
                           scheduler_port=8080,
-                          diagnostics_port=8081) as cluster, Client(cluster) as client:
+                          diagnostics_port=8081) as cluster, Client(cluster):
             self.srfc_dask.fit(self.x_train, self.y_train)
 
     def _fit_with_spf(self):

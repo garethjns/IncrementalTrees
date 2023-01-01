@@ -18,6 +18,7 @@ def run_on_blobs():
 
     ests_per_chunk = 4
     chunks = len(x.divisions)
+    print(f"n chunks: {chunks}")
 
     srfc = Incremental(StreamingRFC(
         n_estimators_per_chunk=ests_per_chunk,

@@ -49,7 +49,7 @@ class FitTestBase(PredictTestBase):
 
     def test_fit__sampled_partial_fit(self):
         """With dask off, call .fit directly."""
-        mod = self.mod.fit(self.x, self.y)
+        self.mod.fit(self.x, self.y)
 
     def test_n_estimators(self):
         self.assertEqual(self.expected_n_estimators, len(self.mod.estimators_))
