@@ -1,4 +1,4 @@
-import warnings
+from typing import Optional, Union, Dict, List
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -15,27 +15,28 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
     """
 
     def __init__(self,
-                 bootstrap=True,
-                 class_weight=None,
-                 criterion='gini',
-                 max_depth=None,
-                 max_features='auto',
-                 max_leaf_nodes=None,
-                 min_impurity_decrease=0.0,
-                 min_impurity_split=None,
-                 min_samples_leaf=1,
-                 min_samples_split=2,
-                 min_weight_fraction_leaf=0.0,
-                 n_estimators_per_chunk: int = 1,
-                 n_jobs=None,
-                 oob_score=False,
-                 random_state=None,
-                 verbose=0,
+                 criterion: str = 'gini',
+                 max_depth: Optional[int] = None,
+                 min_samples_split: int = 2,
+                 min_samples_leaf: int = 1,
+                 min_weight_fraction_leaf: float = 0.0,
+                 max_features: Optional[str] = 'sqrt',
+                 max_leaf_nodes: Optional[int] = None,
+                 min_impurity_decrease: float = 0.0,
+                 bootstrap: bool = True,
+                 oob_score: bool = False,
+                 n_jobs: Optional[int] = None,
+                 random_state: Optional[int] = None,
+                 verbose: int = 0,
                  warm_start: bool = True,
+                 class_weight: Optional[Union[str, Dict, List[Dict]]] = None,
+                 ccp_alpha: float = 0.0,
+                 max_samples: Optional[int] = None,
                  dask_feeding: bool = True,
-                 max_n_estimators=10,
-                 spf_n_fits=100,
-                 spf_sample_prop=0.1) -> None:
+                 n_estimators_per_chunk: int = 1,
+                 max_n_estimators: int = 10,
+                 spf_n_fits: int = 100,
+                 spf_sample_prop: float = 0.1) -> None:
         """
         :param bootstrap:
         :param class_weight:
@@ -44,7 +45,6 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
         :param max_features:
         :param max_leaf_nodes:
         :param min_impurity_decrease:
-        :param min_impurity_split:
         :param min_samples_leaf:
         :param min_samples_split:
         :param min_weight_fraction_leaf:
@@ -73,7 +73,6 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                         max_features=max_features,
                         max_leaf_nodes=max_leaf_nodes,
                         min_impurity_decrease=min_impurity_decrease,
-                        min_impurity_split=min_impurity_split,
                         min_samples_leaf=min_samples_leaf,
                         min_samples_split=min_samples_split,
                         min_weight_fraction_leaf=min_weight_fraction_leaf,
@@ -89,4 +88,7 @@ class StreamingRFC(ClassifierAdditions, ClassifierOverloads, RandomForestClassif
                         max_n_estimators=max_n_estimators,
                         verb=0,
                         spf_n_fits=spf_n_fits,
-                        spf_sample_prop=spf_sample_prop)
+                        spf_sample_prop=spf_sample_prop,
+                        ccp_alpha=ccp_alpha,
+                        max_samples=max_samples
+                        )
