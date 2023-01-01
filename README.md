@@ -134,7 +134,7 @@ srfc = StreamingRFC(n_estimators_per_chunk=1, max_features=x.shape[1])
 
 # Version history
 ## v0.6.0
- - Update to work with scikit-learn==1.2, dask==2022.12, dask-glm==0.2.0, dask-ml==2022.5.27
+ - Update to work with scikit-learn==1.2, dask==2022.12, dask-glm==0.2.0, dask-ml==2022.5.27. Support python 3.8 and 3.9.
 ## v0.5.1
  - Add support for passing fit args/kwargs via `.fit` (specifically, `sample_weight`)
 ## v0.5.0

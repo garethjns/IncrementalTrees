@@ -17,7 +17,7 @@ setuptools.setup(name='incremental_trees',
                  install_requires=[
                      "scikit-learn==1.2",
                      "pandas",
-                     "numpy"
+                     "numpy",
                      "dask==2022.12",
                      "dask-glm==0.2.0",
                      "dask-ml==2022.5.27",
