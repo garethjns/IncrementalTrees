@@ -1,5 +1,3 @@
-# TODO: These tests aren't finished. Need to generalise, add EXTC, regressors, etc.
-
 import unittest
 import warnings
 
@@ -7,18 +5,14 @@ from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.model_selection import RandomizedSearchCV
 
 from incremental_trees.models.classification.streaming_extc import StreamingEXTC
-from incremental_trees.trees import StreamingRFC
+from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 from tests.common.data_fixture import DataFixture
 from tests.common.param_fixtures import RFCGRID, SRFCGRID
 
 
 class GridBenchmarks:
     def test_fit_all(self):
-        """
-        Fit grids and compare.
-
-        TODO: Generalise naming.
-        """
+        """Fit grids and compare."""
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', FutureWarning)

@@ -4,13 +4,10 @@ from sklearn.datasets import make_blobs
 from incremental_trees.models.classification.streaming_rfc import StreamingRFC
 
 if __name__ == "__main__":
-    srfc = StreamingRFC(n_estimators_per_chunk=20,
-                        max_n_estimators=np.inf,
-                        n_jobs=8)
+    srfc = StreamingRFC(n_estimators_per_chunk=20, max_n_estimators=np.inf, n_jobs=8)
 
     # Generate some data in memory
-    x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40,
-                      centers=2, cluster_std=100)
+    x, y = make_blobs(n_samples=int(2e5), random_state=0, n_features=40, centers=2, cluster_std=100)
 
     # Feed .partial_fit() with random samples of the data
     n_chunks = 30
